@@ -4,10 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"github.com/lingdor/magicarray/array"
+	"github.com/lingdor/magicarray/zval"
+	"log"
+	"strings"
 )
 
+func toSqlCall(ctx context.Context, toSql ToSql) (sqlStr string, pms []any) {
+	sqlStr, pms = toSql.ToSql()
+	if ctx.Value(OptLogSql) != nil {
+		log.Printf("sql:%s, parameters:%+v\n", sqlStr, pms)
+	}
+	return
+}
+
 func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[string]any, err error) {
-	sqlStr, ps := toSql.ToSql()
+	sqlStr, ps := toSqlCall(ctx, toSql)
 	var rows *sql.Rows
 	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
 		defer func() {
@@ -32,7 +43,7 @@ func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[st
 	return
 }
 func newVal(ctx context.Context, columnType *sql.ColumnType) any {
-	if opt := ctx.Value(QueryOptNoType); opt != nil {
+	if opt := ctx.Value(OptQueryNoType); opt != nil {
 		var val any
 		return &val
 	}
@@ -74,7 +85,8 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) any {
 		var v sql.NullString
 		return &v
 	case scanTypeNullTime:
-		var v sql.NullTime
+		//var v sql.NullTime
+		var v string
 		return &v
 	case scanTypeUint8:
 		var v uint8
@@ -89,6 +101,20 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) any {
 		var v uint64
 		return &v
 	}
+	switch strings.ToLower(columnType.DatabaseTypeName()) {
+	case "decimal", "numeric", "double":
+		var v float64
+		return &v
+	case "float":
+		var v float32
+		return &v
+	}
+	//switch strings.ToLower(columnType.DatabaseTypeName()) {
+	//case "decimal", "numeric", "double", "float":
+	//	var v string
+	//	return &v
+	//}
+
 	{
 		var v any
 		return &v
@@ -96,7 +122,7 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) any {
 }
 
 func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []map[string]any, err error) {
-	sqlStr, ps := toSql.ToSql()
+	sqlStr, ps := toSqlCall(ctx, toSql)
 	ret = make([]map[string]any, 0, 10)
 	var rows *sql.Rows
 	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
@@ -124,8 +150,9 @@ func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []
 	return
 }
 func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.ZVal, err error) {
-	sqlStr, ps := toSql.ToSql()
-	if rows, err := db.QueryContext(ctx, sqlStr, ps...); err == nil {
+	sqlStr, ps := toSqlCall(ctx, toSql)
+	var rows *sql.Rows
+	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
 		defer func() {
 			err2 := rows.Close()
 			if err2 != nil && err == nil {
@@ -133,9 +160,19 @@ func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.
 			}
 		}()
 		if rows.Next() {
-			var val any
-			if err = rows.Scan(&val); err == nil {
-				val, err = array.Valueof(val)
+			var cols []*sql.ColumnType
+			if cols, err = rows.ColumnTypes(); err == nil {
+				if len(cols) < 1 {
+					val = zval.NewZValNil()
+					return
+				}
+				var v = newVal(ctx, cols[0])
+				if err = rows.Scan(v); err == nil {
+					val = zval.NewZVal(v)
+					return
+				}
+			} else {
+				return
 			}
 		}
 	}
@@ -158,7 +195,7 @@ func QueryArrRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (arr ar
 }
 
 func QueryMap(db DBHandler, toSql ToSql) (ret map[string]any, err error) {
-	return QueryMap(db, toSql)
+	return QueryMapContext(context.Background(), db, toSql)
 }
 
 func QueryMapRows(db DBHandler, toSql ToSql) (ret []map[string]any, err error) {

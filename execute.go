@@ -7,8 +7,8 @@ import (
 
 // ExecuteContext some sql like update,insert with context
 func ExecuteContext(ctx context.Context, handler DBHandler, toSql ToSql) (sql.Result, error) {
-	sqlStr, pms := toSql.ToSql()
-	return handler.ExecContext(ctx, sqlStr, pms)
+	sqlStr, ps := toSqlCall(ctx, toSql)
+	return handler.ExecContext(ctx, sqlStr, ps)
 }
 
 // Execute some sql like update,insert

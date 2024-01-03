@@ -8,13 +8,6 @@ const Bit = "bit"
 const TinyInt = "tinyint"
 const Enum = "enum"
 
-type Field interface {
-	Name() string
-	Type() string
-	Size() int
-	ToSql
-}
-
 type FieldInfo struct {
 	name       string
 	fieldType  string

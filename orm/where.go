@@ -1,4 +1,4 @@
-package gsql
+package orm
 
 import (
 	"bytes"
