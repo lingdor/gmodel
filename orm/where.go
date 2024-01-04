@@ -3,6 +3,7 @@ package orm
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 )
 
 type sqlWhereBuilder struct {
@@ -32,6 +33,13 @@ func (s *sqlWhereBuilder) ToSql() (string, []any) {
 }
 
 func operatorVal(field string, operator string, val any) *sqlWhereBuilder {
+
+	if sql, ok := val.(ToSql); ok {
+		return &sqlWhereBuilder{
+			sql:        fmt.Sprintf("%s %s %s", field, operator, common.OnlySql(sql)),
+			parameters: []any{},
+		}
+	}
 	return &sqlWhereBuilder{
 		sql:        fmt.Sprintf("%s %s ?", field, operator),
 		parameters: []any{val},
@@ -70,9 +78,26 @@ func IsNotNull(field string) *sqlWhereBuilder {
 	return operator(field, " is not null")
 }
 func Between(field string, val1, val2 any) *sqlWhereBuilder {
+	buf := bytes.Buffer{}
+	buf.WriteString(field)
+	buf.WriteString(" between ")
+	var parameters []any = make([]any, 0)
+	if v, ok := val1.(ToSql); ok {
+		buf.WriteString(common.OnlySql(v))
+	} else {
+		buf.WriteString("?")
+		parameters = append(parameters, val1)
+	}
+	buf.WriteString(" and ")
+	if v, ok := val2.(ToSql); ok {
+		buf.WriteString(common.OnlySql(v))
+	} else {
+		buf.WriteString("?")
+		parameters = append(parameters, val1)
+	}
 	return &sqlWhereBuilder{
-		sql:        fmt.Sprintf("%s between ? and ?", field),
-		parameters: []any{val1, val2},
+		sql:        buf.String(),
+		parameters: parameters,
 	}
 }
 func In(field string, vals ...any) *sqlWhereBuilder {
@@ -86,20 +111,29 @@ func in(field string, action string, vals ...any) *sqlWhereBuilder {
 		panic(fmt.Errorf("gsql.In must have parameters, but vals is empty"))
 	}
 	buf := bytes.Buffer{}
-	buf.Write([]byte(field))
-	buf.Write([]byte(action))
-	buf.Write([]byte(" ("))
-	for i, _ := range vals {
+	buf.WriteString(field)
+	buf.WriteString(action)
+	buf.WriteString(" (")
+	var parameters []any = make([]any, 0, len(vals))
+	for i, v := range vals {
 		if i != 0 {
 			buf.Write([]byte{byte(',')})
 		}
+		if vsql, ok := v.(ToSql); ok {
+			sqlStr, pms := vsql.ToSql()
+			if pms != nil {
+				parameters = append(parameters, pms...)
+			}
+			buf.WriteString(sqlStr)
+		}
 		buf.Write([]byte{byte('?')})
+		parameters = append(parameters, v)
 	}
-	buf.Write([]byte(")"))
+	buf.WriteString(")")
 
 	return &sqlWhereBuilder{
 		sql:        buf.String(),
-		parameters: vals,
+		parameters: parameters,
 	}
 }
 

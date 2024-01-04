@@ -60,39 +60,39 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
-	buf.Write([]byte("update "))
-	buf.Write([]byte(d.table))
+	buf.WriteString("update ")
+	buf.WriteString(d.table)
 
-	buf.Write([]byte(" set "))
+	buf.WriteString(" set ")
 
 	first := true
 	for k, v := range d.set {
 		if !first {
-			buf.Write([]byte(byte(',')))
+			buf.Write([]byte{byte(',')})
 		} else {
 			first = false
 		}
-		buf.Write([]byte(fmt.Sprintf("\"%s\"=?", k)))
+		buf.WriteString(fmt.Sprintf("\"%s\"=?", k))
 		parameters = append(parameters, v)
 
 	}
 
 	if d.where != nil {
-		buf.Write([]byte(" where "))
+		buf.WriteString(" where ")
 		sqlStr, pms := d.where.ToSql()
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
-		buf.Write([]byte(sqlStr))
+		buf.WriteString(sqlStr)
 	}
 	if d.last != nil {
-		buf.Write([]byte(byte(' ')))
+		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
 			sqlStr, pms := sql.ToSql()
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 	return buf.String(), parameters

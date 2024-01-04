@@ -29,9 +29,9 @@ func (s *SetInfo) ToSql() (string, []any) {
 }
 
 type updateSqlBuilder struct {
-	table string
+	table ToSql
 	where ToSql
-	set   map[string]any
+	set   map[Field]any
 	last  []ToSql
 }
 type FieldMap map[Field]any
@@ -44,22 +44,19 @@ func (d *updateSqlBuilder) Where(sql ToSql) {
 	d.where = sql
 }
 
-func (d *updateSqlBuilder) Set(sql ToSql) {
-	d.set = append(d.set, sql)
+func (d *updateSqlBuilder) Set(field Field, val any) {
+	d.set[field] = val
 }
 
-func (d *updateSqlBuilder) SetKV(k, v any) {
-	d.Set(&SetInfo{k: k, v: v})
-}
 func (d *updateSqlBuilder) SetArr(arr array.MagicArray) {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
-		d.SetKV(k, v.Interface())
+		d.Set(NewNameField(k.String()), v.Interface())
 	}
 }
 func (d *updateSqlBuilder) SetMap(vals map[Field]any) {
 	for k, v := range vals {
-		d.SetKV(k, v)
+		d.Set(k, v)
 	}
 }
 
@@ -70,7 +67,7 @@ func (d *updateSqlBuilder) Last(sql ToSql) {
 func Update(table ToSql) *updateSqlBuilder {
 	return &updateSqlBuilder{
 		table: table,
-		set:   make([]ToSql, 0),
+		set:   make(map[Field]any, 0),
 		last:  make([]ToSql, 0),
 	}
 }
@@ -86,43 +83,40 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
-	buf.Write([]byte("update "))
+	buf.WriteString("update ")
 	sqlStr, _ := d.table.ToSql()
-	buf.Write([]byte(sqlStr))
+	buf.WriteString(sqlStr)
 
-	buf.Write([]byte(" set "))
+	buf.WriteString(" set ")
 
 	first := true
-	for _, sql := range d.set {
+	for field, fieldv := range d.set {
 		if !first {
-			buf.Write([]byte(byte(',')))
+			buf.Write([]byte{byte(',')})
+		} else {
+			first = true
 		}
-		sqlStr, pms := sql.ToSql()
-		if pms != nil {
-			parameters = append(parameters, pms...)
-		}
-		buf.Write([]byte(sqlStr))
-		if first && len(sqlStr) > 0 {
-			first = false
-		}
+		sqlStr := fmt.Sprintf("\"%s\"=?", field.Name())
+		parameters = append(parameters, fieldv)
+		buf.WriteString(sqlStr)
 	}
 
 	if d.where != nil {
-		buf.Write([]byte(" where "))
+		buf.WriteString(" where ")
 		sqlStr, pms := d.where.ToSql()
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
-		buf.Write([]byte(sqlStr))
+		buf.WriteString(sqlStr)
 	}
 	if d.last != nil {
-		buf.Write([]byte(byte(' ')))
+		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
 			sqlStr, pms := sql.ToSql()
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 	return buf.String(), parameters

@@ -1,4 +1,4 @@
-package gmodel
+package common
 
 type ToSql interface {
 	ToSql() (string, []any)

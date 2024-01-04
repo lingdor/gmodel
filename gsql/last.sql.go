@@ -7,27 +7,44 @@ import (
 )
 
 // todo Is support parameters?
-type sqlLimit string
+type sqlLimit struct {
+	limit1 int
+	limit2 int
+	offset int
+}
 
 func (l *sqlLimit) Offset(v int) sqlLimit {
-	*l = sqlLimit(fmt.Sprintf("%s offset %d", *l, v))
+	l.offset = v
 	return *l
 }
 
 func (l sqlLimit) ToSql() (string, []any) {
-	return string(l), nil
+
+	var parameters []any
+	buf := bytes.Buffer{}
+	buf.WriteString(" limit ?")
+	parameters = append(parameters, l.limit1)
+	if l.limit2 != 0 {
+		buf.WriteString(", ?")
+		parameters = append(parameters, l.limit2)
+	} else if l.offset != 0 {
+		buf.WriteString(" offset ")
+		buf.WriteString(strconv.Itoa(l.offset))
+	}
+
+	return string(buf.String()), parameters
 }
 
-func Limit(offset1 int, offsets ...int) sqlLimit {
-	if len(offsets) > 1 {
-		panic(fmt.Sprintf("offset values max 2, but give %d", len(offsets)+1))
+func Limit(limit1 int, limit2 ...int) *sqlLimit {
+
+	if len(limit2) > 1 {
+		panic(fmt.Sprintf("offset values max 2, but give %d", len(limit2)+1))
 	}
-	buf := bytes.Buffer{}
-	buf.Write([]byte(" limit "))
-	buf.Write([]byte(strconv.Itoa(offset1)))
-	if len(offsets) == 1 {
-		buf.Write([]byte{byte(',')})
-		buf.Write([]byte(strconv.Itoa(offsets[0])))
+	ret := &sqlLimit{
+		limit1: limit1,
 	}
-	return sqlLimit(buf.String())
+	if len(limit2) > 0 {
+		ret.limit2 = limit2[0]
+	}
+	return ret
 }

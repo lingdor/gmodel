@@ -1,14 +1,15 @@
-package gsql
+package orm
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 )
 
 type insertSqlBuilder struct {
-	table     string
-	fields    []string
+	table     ToSql
+	fields    []Field
 	values    [][]any
 	selectSql ToSql
 	last      []ToSql
@@ -18,7 +19,7 @@ func (d *insertSqlBuilder) Values(vals ...any) {
 	d.values = append(d.values, vals)
 }
 
-func (d *insertSqlBuilder) Set(field string, val any) {
+func (d *insertSqlBuilder) Set(field Field, val any) {
 
 	if len(d.values) < 2 {
 		d.fields = append(d.fields, field)
@@ -33,10 +34,10 @@ func (d *insertSqlBuilder) Set(field string, val any) {
 func (d *insertSqlBuilder) SetArr(arr array.MagicArray) {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
-		d.Set(k.String(), v.Interface())
+		d.Set(NewNameField(k.String()), v.Interface())
 	}
 }
-func (d *insertSqlBuilder) SetMap(vals map[string]any) {
+func (d *insertSqlBuilder) SetMap(vals map[Field]any) {
 	for k, v := range vals {
 		d.Set(k, v)
 	}
@@ -45,7 +46,7 @@ func (d *insertSqlBuilder) SetMap(vals map[string]any) {
 func (d *insertSqlBuilder) Last(sql ToSql) {
 	d.last = append(d.last, sql)
 }
-func (d *insertSqlBuilder) Select(fields ...string) (ret *selectSqlBuilder) {
+func (d *insertSqlBuilder) Select(fields ...ToSql) (ret *selectSqlBuilder) {
 	ret = &selectSqlBuilder{
 		fields: fields,
 	}
@@ -53,7 +54,7 @@ func (d *insertSqlBuilder) Select(fields ...string) (ret *selectSqlBuilder) {
 	return
 }
 
-func Insert(table string) *insertSqlBuilder {
+func Insert(table ToSql) *insertSqlBuilder {
 	return &insertSqlBuilder{
 		table:  table,
 		values: make([][]any, 0),
@@ -63,32 +64,32 @@ func Insert(table string) *insertSqlBuilder {
 
 func (d *insertSqlBuilder) ToSql() (string, any) {
 
-	if d.table == "" {
+	if d.table == nil {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))
 	}
 	if len(d.values) < 1 && d.selectSql == nil {
-		panic(fmt.Errorf("select sql generate faild, no found parts of:'set'"))
+		panic(fmt.Errorf("select sql generate faild, no found parts of:' values '"))
 	}
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
 	buf.WriteString("insert into ")
-	buf.WriteString(d.table)
+	tname, _ := d.table.ToSql()
+	buf.WriteString(fmt.Sprintf(tname))
 	if len(d.fields) > 0 {
 		buf.WriteString("(")
 		for i, field := range d.fields {
 			if i > 0 {
-				buf.Write([]byte{byte(',')})
+				buf.WriteString(",")
 			}
-			buf.WriteString(fmt.Sprintf("\"%s\"", field))
+			buf.WriteString(common.OnlySql(field))
 		}
-
 		buf.WriteString(")")
 	}
 
 	for i, values := range d.values {
 		if len(values) < 1 {
-			panic(fmt.Errorf("empty values in insert sql"))
+			panic(fmt.Errorf("empty values in the insert sql"))
 		}
 		if i > 0 {
 			buf.WriteString(",")
@@ -110,7 +111,7 @@ func (d *insertSqlBuilder) ToSql() (string, any) {
 		buf.WriteString(sql)
 	}
 	if d.last != nil {
-		buf.Write([]byte{byte(' ')})
+		buf.WriteString(" ")
 		for _, sql := range d.last {
 			sqlStr, pms := sql.ToSql()
 			if pms != nil {

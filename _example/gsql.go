@@ -29,18 +29,8 @@ func simpleCommand() {
 		panic(err)
 	}
 
-	if arr, err = gmodel.QueryArrRowsContext(ctx, db, gsql.Select().From("t2")); err == nil {
-		var bs []byte
-		if bs, err = array.JsonMarshal(arr, array.JsonOptDefaultNamingUnderscoreToHump(), array.JsonOptIndent4()); err == nil {
-			fmt.Println(string(bs))
-		}
-	}
-	if err != nil {
-		panic(err)
-	}
-
 	where := gsql.Gt("age", 1).And(gsql.Raw("age is not null"))
-	selectSql := gsql.Select(gsql.Sum("age").As("x")).From("user1")
+	selectSql := gsql.Select(gsql.As(gsql.Sum("age"), "x")).From("user1")
 	selectSql = selectSql.Where(where).Last(gsql.Limit(1))
 	var val array.ZVal
 	if val, err = gmodel.QueryValContext(ctx, db, selectSql); err == nil {

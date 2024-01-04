@@ -68,7 +68,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
-	buf.Write([]byte("select "))
+	buf.WriteString("select ")
 	if d.fields == nil {
 		buf.Write([]byte{byte('*')})
 	} else {
@@ -76,39 +76,39 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if i > 0 {
 				buf.Write([]byte{byte(',')})
 			}
-			buf.Write([]byte(field))
+			buf.WriteString(field)
 		}
 	}
 	if d.from != "" {
-		buf.Write([]byte(" from "))
-		buf.Write([]byte(d.from))
+		buf.WriteString(" from ")
+		buf.WriteString(d.from)
 	}
 	if d.joins != nil {
 		for _, join := range d.joins {
-			buf.Write([]byte(" "))
+			buf.WriteString(" ")
 			sqlStr, pms := join.ToSql()
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 
 	if d.where != nil {
-		buf.Write([]byte(" where "))
+		buf.WriteString(" where ")
 		sqlStr, pms := d.where.ToSql()
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
-		buf.Write([]byte(sqlStr))
+		buf.WriteString(sqlStr)
 	}
 	if d.orderBy != "" {
-		buf.Write([]byte(" order by "))
-		buf.Write([]byte(d.orderBy))
+		buf.WriteString(" order by ")
+		buf.WriteString(d.orderBy)
 	}
 	if d.groupBy != "" {
-		buf.Write([]byte(" group by "))
-		buf.Write([]byte(d.groupBy))
+		buf.WriteString(" group by ")
+		buf.WriteString(d.groupBy)
 	}
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
@@ -117,7 +117,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 	return buf.String(), parameters

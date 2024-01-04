@@ -23,11 +23,11 @@ func Limit(offset1 int, offsets ...int) sqlLimit {
 		panic(fmt.Sprintf("offset values max 2, but give %d", len(offsets)+1))
 	}
 	buf := bytes.Buffer{}
-	buf.Write([]byte(" limit "))
-	buf.Write([]byte(strconv.Itoa(offset1)))
+	buf.WriteString(" limit ")
+	buf.WriteString(strconv.Itoa(offset1))
 	if len(offsets) == 1 {
 		buf.Write([]byte{byte(',')})
-		buf.Write([]byte(strconv.Itoa(offsets[0])))
+		buf.WriteString(strconv.Itoa(offsets[0]))
 	}
 	return sqlLimit(buf.String())
 }

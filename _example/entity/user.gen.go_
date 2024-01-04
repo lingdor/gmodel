@@ -21,7 +21,7 @@ type TbUserSchemaType struct {
 
 var TbUserSchema = TbUserSchemaType{
 	Id:   gmodel.NewField("id", gmodel.Int, 4),
-	Name: gmodel.NewField("name", gmodel.VarChar, 50),
+	Name: gmodel.NewField("user_name", gmodel.VarChar, 50),
 }
 
 func (T *TbUserSchema) As (string alias) ToSql {
@@ -40,42 +40,4 @@ func (T *TbUserSchemaType) ToSql() string {
 
 func Selectdemo() {
 
-	where := gsql.group(gsql.Equal(TbUserFields.Id, 123).And(gsql.Gt(TbUserFields.Id, 5))).Or(gsql.like(TbUserFields.Name, "%tom%"))
-	vals := map[Field]any{
-		TbUserFields.Name:   "lily",
-		TbUserFields.IsMale: true,
-	}
-	gmodel.Execute(ctx, conn, gsql.Insert(TbUserSchema).values(vals))
-	gmodel.Execute(ctx, conn, gsql.Update(TbUserSchema).Where(where).Last("limit 1"))
-	gmodel.QueryArr(tx, gsql.Select(TbUserschema.AllFields()...).From(TbUserSchema).Where(where).Last(gsql.MysqlLimit(1, 2)))
-	gmodel.QueryMap(tx, gsql.Select(TbUserschema.AllFields()).From(TbUserSchema).Where(where).Last(gsql.PGLimit(5).Offset(3)))
-	gmodel.QueryRow(tx, gsql.Select(gmodel.All).From(TbUserSchema).Where(where).Limit(10))
-	gmodel.Query(ctx, conn, gsql.Raw("select * from xx where ff=?", 123))
-	handler := gmodel.QueryHandle(tx, gmodel.Sel)
-	defer handler.Close()
-	for i, Arr := handler.nextArr(); Arr != nil; i, Arr = handler.NextArr() {
-		//row
-
-    gmodel.QueryMap(tx,conn,gsql.Select(TbUserSchema.UserName("u1"),TbUserSchema.Age("u2")).from("user1").
-            LeftJoin(TbSchoolSchema.As("s")).On(gmodel.Eq(TbSchoolSchema.Id("s"),TbUserSchema.UserId("u")))
-
-       gmodel.Execute(ctx,conn,gsql.Update(TbUserSchema).Set(Fieldmap{
-            TbUserSchema.Name: 'user_updated',
-            TbUserSchema.Age: '22',
-       }.Where(gmodel.Eq(TbUserSchema.Id,1)).Last(gmodel.Limit(1));
-
-       gmodel.Execute(ctx,conn,gsql.Update(TbUserSchema)
-            .Set(TbUserSchema.Name,"xx").Set(TbUserSchema.Age,80)
-            .Where(gmodel.Eq(TbUserSchema.Id,1)).Last(gmodel.Limit(1));
-
-//insert gsql
-       gmodel.Execute(ctx,conn,gsql.Insert(TbUserSchema,[]string...).MapValues(maps map[string]any{}...).MapValues()
-       gmodel.Execute(ctx,conn,gsql.Insert(Tbuser,[]string...).Values("uname1",12).Values("user2",19);
-
- //insert orm
-       gmodel.Execute(ctx,conn,gsql.Insert(TbUserSchema,[]Field...).MapValues(maps map[Field]any{}...)
-       gmodel.Execute(ctx,conn,gsql.Insert(Tbuser,[]Field...).Values("uname1",12).Values("user2",19);
- //
-       gmodel.Execute(ctx,conn,gsql.Insert(field1,field2).Into(TbUser).Values(gsql.Select())
-       gmodel.Execute(ctx,conn,gsql.Insert(TbUserSchema).Set(k,v).Set('k',v).Set('k','v');
 }

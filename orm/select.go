@@ -3,16 +3,15 @@ package orm
 import (
 	"bytes"
 	"fmt"
-	"strings"
 )
 
 type selectSqlBuilder struct {
 	fields  []ToSql
-	from    string
+	from    []ToSql
 	joins   []ToSql
 	where   ToSql
-	orderBy string
-	groupBy string
+	orderBy []ToSql
+	groupBy []Field
 	last    []ToSql
 }
 type selectJoinSqlBuilder struct {
@@ -42,20 +41,21 @@ func (s *selectJoinSqlBuilder) ToSql() (string, []any) {
 	return fmt.Sprintf("%s %s on %s", s.joinType, tableStr, onStr), pms
 }
 
-func (d *selectSqlBuilder) From(sql ...string) *selectSqlBuilder {
-	d.from = strings.Join(sql, ",")
+func (d *selectSqlBuilder) From(sql ...ToSql) *selectSqlBuilder {
+
+	d.from = sql
 	return d
 }
 func (d *selectSqlBuilder) Where(sql ToSql) *selectSqlBuilder {
 	d.where = sql
 	return d
 }
-func (d *selectSqlBuilder) OrderBy(sql string) *selectSqlBuilder {
+func (d *selectSqlBuilder) OrderBy(sql ...ToSql) *selectSqlBuilder {
 	d.orderBy = sql
 	return d
 }
-func (d *selectSqlBuilder) GroupBy(sql string) *selectSqlBuilder {
-	d.groupBy = sql
+func (d *selectSqlBuilder) GroupBy(fields ...Field) *selectSqlBuilder {
+	d.groupBy = fields
 	return d
 }
 func (d *selectSqlBuilder) Last(sql ...ToSql) *selectSqlBuilder {
@@ -77,59 +77,77 @@ func (d *selectSqlBuilder) Join(sql ToSql) *selectJoinSqlBuilder {
 
 func (d *selectSqlBuilder) ToSql() (string, []any) {
 
-	if d.from == "" {
-		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))
-	}
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
-	buf.Write([]byte("select "))
-	if d.fields == nil {
+	buf.WriteString("select ")
+	if d.fields == nil || len(d.fields) == 0 {
 		buf.Write([]byte{byte('*')})
 	} else {
-		first := true
-		for _, sql := range d.fields {
-			if !first {
+		for i, sql := range d.fields {
+			if i > 0 {
 				buf.Write([]byte{byte(',')})
 			}
 			sqlStr, pms := sql.ToSql()
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
-			if first && len(sqlStr) > 0 {
-				first = false
-			}
+			buf.WriteString(sqlStr)
 		}
 	}
-	buf.Write([]byte(" from "))
-	buf.Write([]byte(d.from))
+	if d.from != nil && len(d.from) > 0 {
+		buf.WriteString(" from ")
+		for i, sql := range d.from {
+			if i > 0 {
+				buf.Write([]byte{byte(',')})
+			}
+			sqlStr, pms := sql.ToSql()
+			if pms != nil {
+				parameters = append(parameters, pms...)
+			}
+			buf.WriteString(sqlStr)
+		}
+	}
 
 	if d.joins != nil {
 		for _, join := range d.joins {
-			buf.Write([]byte(" "))
+			buf.WriteString(" ")
 			sqlStr, pms := join.ToSql()
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 
 	if d.where != nil {
-		buf.Write([]byte(" where "))
+		buf.WriteString(" where ")
 		sqlStr, pms := d.where.ToSql()
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
-		buf.Write([]byte(sqlStr))
+		buf.WriteString(sqlStr)
 	}
-	if d.orderBy != "" {
-		buf.Write([]byte(" order by "))
-		buf.Write([]byte(d.orderBy))
+	if d.orderBy != nil && len(d.orderBy) > 0 {
+		buf.WriteString(" order by ")
+		for i, item := range d.orderBy {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			sql, _ := item.ToSql()
+			buf.WriteString(sql)
+		}
 	}
-	if d.groupBy != "" {
-		buf.Write([]byte(" group by "))
-		buf.Write([]byte(d.groupBy))
+	if d.groupBy != nil && len(d.groupBy) > 0 {
+		buf.WriteString(" group by ")
+
+		for i, field := range d.groupBy {
+			if i > 0 {
+				buf.WriteString(",")
+			}
+			buf.WriteString("\"")
+			buf.WriteString(field.Name())
+			buf.WriteString("\"")
+		}
 	}
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
@@ -138,7 +156,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
-			buf.Write([]byte(sqlStr))
+			buf.WriteString(sqlStr)
 		}
 	}
 	return buf.String(), parameters
@@ -149,45 +167,47 @@ func Select(fields ...ToSql) *selectSqlBuilder {
 	}
 }
 
-type sumSql string
+func Sum(field ToSql) *fieldWrapper {
+	sql, _ := field.ToSql()
+	field = Sql(fmt.Sprintf("sum(%s)", sql))
+	return WrapField(field)
+}
+func Avg(field ToSql) *fieldWrapper {
+	sql, _ := field.ToSql()
+	field = Sql(fmt.Sprintf("avg(%s)", sql))
+	return WrapField(field)
+}
+func Count(field ToSql) *fieldWrapper {
+	sql, _ := field.ToSql()
+	field = Sql(fmt.Sprintf("count(%s)", sql))
+	return WrapField(field)
+}
+func Max(field ToSql) *fieldWrapper {
+	sql, _ := field.ToSql()
+	field = Sql(fmt.Sprintf("max(%s)", sql))
+	return WrapField(field)
+}
+func Min(field ToSql) *fieldWrapper {
+	sql, _ := field.ToSql()
+	field = Sql(fmt.Sprintf("min(%s)", sql))
+	return WrapField(field)
+}
 
-func (s sumSql) ToSql() (string, []any) {
-	return string(s), nil
+func Asc(fields ...Field) ToSql {
+	return sortOutput("asc", fields...)
 }
-func (s sumSql) As(alias string) sumSql {
-	s = sumSql(fmt.Sprintf("sum(%s) as %s", s, alias))
-	return s
+func Desc(fields ...Field) ToSql {
+	return sortOutput("desc", fields...)
 }
-
-func Sum(field string) sumSql {
-	return sumSql(field)
-}
-
-type avgSql string
-
-func (s avgSql) ToSql() (string, []any) {
-	return string(s), nil
-}
-func (s avgSql) As(alias string) avgSql {
-	s = avgSql(fmt.Sprintf("%s as %s", s, alias))
-	return s
-}
-func Avg(field string) avgSql {
-	return avgSql(fmt.Sprintf("avg(\"%s\")", field))
-}
-
-type countSql string
-
-func (s countSql) ToSql() (string, []any) {
-	return string(s), nil
-}
-func (s countSql) As(alias string) countSql {
-	s = countSql(fmt.Sprintf("%s as %s", s, alias))
-	return s
-}
-func Count(field string) countSql {
-	if field == "*" || field == "1" {
-		return countSql(fmt.Sprintf("count(%s)", field))
+func sortOutput(sortType string, fields ...Field) ToSql {
+	buf := bytes.Buffer{}
+	for i, field := range fields {
+		if i > 0 {
+			buf.WriteString(",")
+		}
+		buf.WriteString(fmt.Sprintf("\"%s\"", field.Name()))
 	}
-	return countSql(fmt.Sprintf("count(\"%s\")", field))
+	buf.WriteString(" ")
+	buf.WriteString(sortType)
+	return Sql(buf.String())
 }

@@ -6,7 +6,5 @@ type ToSql interface {
 
 type Field interface {
 	Name() string
-	Type() string
-	Size() int
 	ToSql
 }

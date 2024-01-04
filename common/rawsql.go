@@ -1,4 +1,4 @@
-package gsql
+package common
 
 var CountAll = Raw("count(*)", nil)
 var Null = Raw("NULL", nil)
@@ -17,4 +17,14 @@ func Raw(sql string, pms ...any) ToSql {
 		sql: sql,
 		pms: pms,
 	}
+}
+
+type SqlStr string
+
+func (s SqlStr) ToSql() (string, []any) {
+	return string(s), nil
+}
+
+func Sql(sql string) ToSql {
+	return SqlStr(sql)
 }

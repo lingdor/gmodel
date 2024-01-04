@@ -53,7 +53,7 @@ func (f Fields) ToSql() (string, []any) {
 			bs.Write([]byte{byte(',')})
 		}
 		sql, _ := field.ToSql()
-		bs.Write([]byte(sql))
+		bs.WriteString(sql)
 	}
 	return bs.String(), nil
 }
