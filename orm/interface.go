@@ -6,5 +6,6 @@ type ToSql interface {
 
 type Field interface {
 	Name() string
+	As(name string) ToSql
 	ToSql
 }

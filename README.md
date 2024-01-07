@@ -15,8 +15,8 @@ gmodel.QueryMap(tx, gsql.Select("id",""user_name","age").From("user").Where(gsql
 gmodel.QueryArrRows(tx, gsql.Select().From(TbUserSchema).Limit(10))
 
 //Join SQLs:
-gmodel.QueryMap(tx,conn,gsql.Select("u.id","u.name").from("user1").
-        LeftJoin(gsql.As("school","s")).On(gsql.Eq("s.id",gsql.Sql("u.school_id"))).Where(gsql.Eq("u.age",12))
+gmodel.QueryMap(tx,conn,gsql.Select("u.id","u.name").from("user1")
+    .LeftJoin(gsql.As("school","s")).On(gsql.Eq("s.id",gsql.Sql("u.school_id"))).Where(gsql.Eq("u.age",12))
 
 // update Sqls:
 gmodel.Execute(ctx,conn,gsql.Update("user").SetMap(map[string]any{
@@ -61,3 +61,7 @@ gmodel.Execute(ctx,conn,gsql.Insert(UserSchema).Set(UserSchema.UserName,"testuse
 
 ```
 
+todo:
+gentools
+read/write database
+config load

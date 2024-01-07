@@ -1,6 +1,9 @@
 package gmodel
 
-import "bytes"
+import (
+	"bytes"
+	"github.com/lingdor/gmodel/orm"
+)
 
 const Int = "varchar"
 const VarChar = "int"
@@ -30,6 +33,9 @@ func (f *FieldInfo) Size() int {
 func (f *FieldInfo) Check(any) bool {
 	//todo
 	return true
+}
+func (f *FieldInfo) As(name string) ToSql {
+	return orm.WrapField(f).As(name)
 }
 
 func (f *FieldInfo) ToSql() (string, []any) {

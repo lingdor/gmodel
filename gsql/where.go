@@ -60,16 +60,16 @@ func Eq(field string, val any) *sqlWhereBuilder {
 func Gt(field string, val any) *sqlWhereBuilder {
 	return operatorVal(field, ">", val)
 }
-func Less(field string, val any) *sqlWhereBuilder {
+func Le(field string, val any) *sqlWhereBuilder {
 	return operatorVal(field, "<", val)
 }
-func LessEqual(field string, val any) *sqlWhereBuilder {
+func LeEq(field string, val any) *sqlWhereBuilder {
 	return operatorVal(field, "<=", val)
 }
-func GtEqual(field string, val any) *sqlWhereBuilder {
+func GtEq(field string, val any) *sqlWhereBuilder {
 	return operatorVal(field, ">=", val)
 }
-func NotEqual(field string, val any) *sqlWhereBuilder {
+func NotEq(field string, val any) *sqlWhereBuilder {
 	return operatorVal(field, "<>", val)
 }
 func IsNull(field string) *sqlWhereBuilder {
