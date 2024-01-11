@@ -13,6 +13,9 @@ func (n nameField) ToSql() (string, []any) {
 func (n nameField) Name() string {
 	return string(n)
 }
+func (n nameField) As(name string) ToSql {
+	return WrapField(n).As(name)
+}
 
 func NewNameField(field string) Field {
 	return nameField(field)

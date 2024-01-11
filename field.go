@@ -14,7 +14,6 @@ const Enum = "enum"
 type FieldInfo struct {
 	name       string
 	fieldType  string
-	size       int
 	isNullable bool
 }
 
@@ -25,9 +24,9 @@ func (f *FieldInfo) Name() string {
 func (f *FieldInfo) Type() string {
 	return f.fieldType
 }
+func (f *FieldInfo) IsNullable() bool {
 
-func (f *FieldInfo) Size() int {
-	return f.size
+	return f.isNullable
 }
 
 func (f *FieldInfo) Check(any) bool {
@@ -42,11 +41,11 @@ func (f *FieldInfo) ToSql() (string, []any) {
 	return f.name, nil
 }
 
-func NewField(name string, fieldType string, size int) Field {
+func NewField(name string, fieldType string, isNullable bool) *FieldInfo {
 	return &FieldInfo{
-		name:      name,
-		fieldType: fieldType,
-		size:      size,
+		name:       name,
+		fieldType:  fieldType,
+		isNullable: isNullable,
 	}
 }
 
