@@ -15,6 +15,7 @@ type FieldInfo struct {
 	name       string
 	fieldType  string
 	isNullable bool
+	isPK       bool
 }
 
 func (f *FieldInfo) Name() string {
@@ -27,6 +28,10 @@ func (f *FieldInfo) Type() string {
 func (f *FieldInfo) IsNullable() bool {
 
 	return f.isNullable
+}
+func (f *FieldInfo) IsPK() bool {
+
+	return f.isPK
 }
 
 func (f *FieldInfo) Check(any) bool {
@@ -41,11 +46,12 @@ func (f *FieldInfo) ToSql() (string, []any) {
 	return f.name, nil
 }
 
-func NewField(name string, fieldType string, isNullable bool) *FieldInfo {
+func NewField(name string, fieldType string, isNullable, isPK bool) *FieldInfo {
 	return &FieldInfo{
 		name:       name,
 		fieldType:  fieldType,
 		isNullable: isNullable,
+		isPK:       isPK,
 	}
 }
 
