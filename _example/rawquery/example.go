@@ -10,7 +10,7 @@ import (
 	"github.com/lingdor/magicarray/array"
 )
 
-func rawCommand() {
+func main() {
 
 	var err error
 	var db *sql.DB
@@ -21,9 +21,9 @@ func rawCommand() {
 	var arr array.MagicArray
 	ctx := context.WithValue(context.Background(), gmodel.OptQueryNoType, 1)
 
-	if arr, err = gmodel.QueryArrRowsContext(ctx, db, gsql.Raw("select * from user1 where id=?", 1)); err == nil {
+	if arr, err = gmodel.QueryArrRowsContext(ctx, db, gsql.Raw("select * from tb_user where id=?", 1)); err == nil {
 		var bs []byte
-		if bs, err = array.JsonMarshal(arr, array.JsonOptDefaultNamingUnderscoreToHump()); err == nil {
+		if bs, err = array.JsonMarshal(arr, array.JsonOptDefaultNamingUnderscoreToCamelCase()); err == nil {
 			fmt.Println(string(bs))
 		}
 	}

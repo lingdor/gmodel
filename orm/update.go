@@ -3,6 +3,7 @@ package orm
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 )
 
@@ -10,14 +11,14 @@ type SetInfo struct {
 	k, v any
 }
 
-func (s *SetInfo) ToSql() (string, []any) {
+func (s *SetInfo) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	var fieldName string
 	switch v := s.k.(type) {
 	case Field:
 		fieldName = v.Name()
 	case ToSql:
-		fieldName, _ = v.ToSql()
+		fieldName, _ = v.ToSql(config)
 	case string:
 		fieldName = v
 	case array.ZVal:
@@ -36,7 +37,7 @@ type updateSqlBuilder struct {
 }
 type FieldMap map[Field]any
 
-func (f FieldMap) ToSql() (string, []any) {
+func (f FieldMap) ToSql(config common.ToSqlConfig) (string, []any) {
 	panic("Field Map is invoked")
 }
 
@@ -72,7 +73,7 @@ func Update(table ToSql) *updateSqlBuilder {
 	}
 }
 
-func (d *updateSqlBuilder) ToSql() (string, any) {
+func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
 
 	if d.table == nil {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))
@@ -84,7 +85,7 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
 	buf.WriteString("update ")
-	sqlStr, _ := d.table.ToSql()
+	sqlStr, _ := d.table.ToSql(config)
 	buf.WriteString(sqlStr)
 
 	buf.WriteString(" set ")
@@ -103,7 +104,7 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 
 	if d.where != nil {
 		buf.WriteString(" where ")
-		sqlStr, pms := d.where.ToSql()
+		sqlStr, pms := d.where.ToSql(config)
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
@@ -112,7 +113,7 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}

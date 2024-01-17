@@ -7,148 +7,173 @@ import (
 )
 
 type sqlWhereBuilder struct {
-	sql        string
-	parameters []any
+	left     any
+	statment string
+	right    ToSql
 }
 
-func (s *sqlWhereBuilder) midStatement(statment string, sql ToSql) *sqlWhereBuilder {
-	sqlStr, pms := sql.ToSql()
-	if pms != nil {
-		s.parameters = append(s.parameters, pms...)
+func (s *sqlWhereBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
+	if s.left == nil {
+		return s.right.ToSql(config)
 	}
-	s.sql = fmt.Sprintf("%s %s %s", s.sql, statment, sqlStr)
-	return s
+	sqlStr, pms := s.right.ToSql(config)
+	if tosql, ok := s.left.(ToSql); ok {
+		leftsql, leftpms := tosql.ToSql(config)
+		if leftpms != nil {
+			pms = append(pms, leftpms...)
+		}
+		return fmt.Sprintf("%s %s %s", leftsql, s.statment, sqlStr), pms
+	} else if fieldstr, ok := s.left.(string); ok {
+		return fmt.Sprintf("%s %s %s", fieldstr, s.statment, sqlStr), pms
+	} else {
+		return fmt.Sprintf("%s %s %s", fmt.Sprint(s.left), s.statment, sqlStr), pms
+	}
 }
 
 func (s *sqlWhereBuilder) Or(sql ToSql) *sqlWhereBuilder {
-	return s.midStatement("or", sql)
+	return &sqlWhereBuilder{
+		left:     s,
+		statment: "or",
+		right:    sql,
+	}
 }
 
 func (s *sqlWhereBuilder) And(sql ToSql) *sqlWhereBuilder {
-	return s.midStatement("and", sql)
-}
-
-func (s *sqlWhereBuilder) ToSql() (string, []any) {
-	return s.sql, s.parameters
-}
-
-func operatorVal(field string, operator string, val any) *sqlWhereBuilder {
-	switch tval := val.(type) {
-	case ToSql:
-		sql, _ := tval.ToSql()
-		return &sqlWhereBuilder{
-			sql:        fmt.Sprintf("%s %s %s", field, operator, sql),
-			parameters: []any{},
-		}
-	}
 	return &sqlWhereBuilder{
-		sql:        fmt.Sprintf("%s %s ?", field, operator),
-		parameters: []any{val},
+		left:     s,
+		statment: "and",
+		right:    sql,
 	}
 }
 
-func operator(field string, operator string) *sqlWhereBuilder {
-	return &sqlWhereBuilder{
-		sql:        fmt.Sprintf("%s %s", field, operator),
-		parameters: []any{},
+func anyToSql(val any) ToSql {
+
+	if v, ok := val.(ToSql); ok {
+		return v
 	}
+	return Raw("?", val)
 }
 
 func Eq(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, "=", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "=",
+		right:    anyToSql(val),
+	}
 }
 func Gt(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, ">", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: ">",
+		right:    anyToSql(val),
+	}
 }
 func Le(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, "<", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "<",
+		right:    anyToSql(val),
+	}
 }
 func LeEq(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, "<=", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "<=",
+		right:    anyToSql(val),
+	}
 }
 func GtEq(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, ">=", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: ">=",
+		right:    anyToSql(val),
+	}
 }
 func NotEq(field string, val any) *sqlWhereBuilder {
-	return operatorVal(field, "<>", val)
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "<>",
+		right:    anyToSql(val),
+	}
 }
 func IsNull(field string) *sqlWhereBuilder {
-	return operator(field, " is null")
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "",
+		right:    Sql("is null"),
+	}
 }
 func IsNotNull(field string) *sqlWhereBuilder {
-	return operator(field, " is not null")
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "",
+		right:    Sql("is not null"),
+	}
 }
 func Between(field string, val1, val2 any) *sqlWhereBuilder {
-	buf := bytes.Buffer{}
-	buf.WriteString(field)
-	buf.WriteString(" between ")
-	var parameters []any = make([]any, 0)
-	if v, ok := val1.(ToSql); ok {
-		buf.WriteString(common.OnlySql(v))
-	} else {
-		buf.WriteString("?")
-		parameters = append(parameters, val1)
-	}
-	buf.WriteString(" and ")
-	if v, ok := val2.(ToSql); ok {
-		buf.WriteString(common.OnlySql(v))
-	} else {
-		buf.WriteString("?")
-		parameters = append(parameters, val1)
-	}
-	return &sqlWhereBuilder{
-		sql:        buf.String(),
-		parameters: parameters,
-	}
-}
-func In(field string, vals ...any) *sqlWhereBuilder {
-	return in(field, " in", vals...)
-}
-func NotIn(field string, vals ...any) *sqlWhereBuilder {
-	return in(field, " not in", vals...)
-}
-func in(field string, action string, vals ...any) *sqlWhereBuilder {
-	if len(vals) < 1 {
-		panic(fmt.Errorf("gsql.In must have parameters, but vals is empty"))
-	}
-	buf := bytes.Buffer{}
-	buf.WriteString(field)
-	buf.WriteString(action)
-	buf.WriteString(" (")
-	var parameters []any = make([]any, 0, len(vals))
-	for i, v := range vals {
-		if i != 0 {
-			buf.Write([]byte{byte(',')})
-		}
-		if vsql, ok := v.(ToSql); ok {
-			sqlStr, pms := vsql.ToSql()
-			if pms != nil {
-				parameters = append(parameters, pms...)
-			}
-			buf.WriteString(sqlStr)
-		}
-		buf.Write([]byte{byte('?')})
-		parameters = append(parameters, v)
-	}
-	buf.WriteString(")")
 
 	return &sqlWhereBuilder{
-		sql:        buf.String(),
-		parameters: parameters,
+		left:     field,
+		statment: "between",
+		right: &sqlWhereBuilder{
+			left:     anyToSql(val1),
+			statment: "between",
+			right:    anyToSql(val2),
+		},
 	}
+}
+
+type valuesSqlBuilder []any
+
+func (v valuesSqlBuilder) ToSql(config common.ToSqlConfig) (sql string, pms []any) {
+	builder := &bytes.Buffer{}
+	pms = make([]any, 0, len(v))
+	for i, item := range v {
+		if i > 0 {
+			builder.WriteString(",")
+		}
+		if sql, ok := item.(ToSql); !ok {
+			builder.WriteString("?")
+			pms = append(pms, item)
+		} else {
+			sqlStr, sqlpms := sql.ToSql(config)
+			if sqlpms != nil {
+				pms = append(pms, sqlpms...)
+			}
+			builder.WriteString(sqlStr)
+		}
+	}
+	sql = builder.String()
+	return
+}
+
+func In(field string, vals ...any) *sqlWhereBuilder {
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "in",
+		right:    valuesSqlBuilder(vals),
+	}
+}
+func NotIn(field string, vals ...any) *sqlWhereBuilder {
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "not in",
+		right:    valuesSqlBuilder(vals),
+	}
+}
+
+type sqlBuilderGroup struct {
+	sql ToSql
+}
+
+func (s sqlBuilderGroup) ToSql(config common.ToSqlConfig) (string, []any) {
+	sql, pms := s.sql.ToSql(config)
+	return fmt.Sprintf("(%s)", sql), pms
 }
 
 func Group(sql ToSql) *sqlWhereBuilder {
-	sqlStr, pms := sql.ToSql()
-	if pms != nil {
-		pms = []any{}
-	}
 	return &sqlWhereBuilder{
-		sql:        fmt.Sprintf("(%s)", sqlStr),
-		parameters: pms,
+		left:  nil,
+		right: sql,
 	}
-}
-
-func Like(field string, val any) ToSql {
-	return Raw(fmt.Sprintf("%s like ?", field), val)
 }

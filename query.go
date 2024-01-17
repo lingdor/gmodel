@@ -3,22 +3,26 @@ package gmodel
 import (
 	"context"
 	"database/sql"
+	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 	"github.com/lingdor/magicarray/zval"
 	"log"
 	"strings"
 )
 
-func toSqlCall(ctx context.Context, toSql ToSql) (sqlStr string, pms []any) {
-	sqlStr, pms = toSql.ToSql()
+func toSqlCall(ctx context.Context, toSql ToSql, config common.ToSqlConfig) (sqlStr string, pms []any) {
+	sqlStr, pms = toSql.ToSql(config)
 	if ctx.Value(OptLogSql) != nil {
 		log.Printf("sql:%s, parameters:%+v\n", sqlStr, pms)
 	}
 	return
 }
 
+// todo 1. tosql input tosqlconfig
+// 2. struct get scan pointers
 func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[string]any, err error) {
-	sqlStr, ps := toSqlCall(ctx, toSql)
+	tosqlConfig := GetToSqlConfig(db)
+	sqlStr, ps := toSqlCall(ctx, toSql, tosqlConfig)
 	var rows *sql.Rows
 	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
 		defer func() {
@@ -122,7 +126,8 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) any {
 }
 
 func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []map[string]any, err error) {
-	sqlStr, ps := toSqlCall(ctx, toSql)
+	tosqlConfig := GetToSqlConfig(db)
+	sqlStr, ps := toSqlCall(ctx, toSql, tosqlConfig)
 	ret = make([]map[string]any, 0, 10)
 	var rows *sql.Rows
 	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
@@ -150,7 +155,8 @@ func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []
 	return
 }
 func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.ZVal, err error) {
-	sqlStr, ps := toSqlCall(ctx, toSql)
+	tosqlConfig := GetToSqlConfig(db)
+	sqlStr, ps := toSqlCall(ctx, toSql, tosqlConfig)
 	var rows *sql.Rows
 	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
 		defer func() {
@@ -182,7 +188,7 @@ func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.
 func QueryArrContext(ctx context.Context, db DBHandler, toSql ToSql) (arr array.MagicArray, err error) {
 	var mp map[string]any
 	if mp, err = QueryMapContext(ctx, db, toSql); err == nil {
-		return array.ValueofMap(mp), nil
+		return array.Valueof(mp)
 	}
 	return
 }
@@ -194,6 +200,19 @@ func QueryArrRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (arr ar
 	return
 }
 
+// todo
+// func QueryEntityContext(ctx context.Context, db DBHandler, toSql ToSql, entity any) (arr array.MagicArray, err error) {
+//
+//		if handler, ok := entity.(EntityFieldHandler); ok {
+//
+//		}
+//
+//		var mp map[string]any
+//		if mp, err = QueryMapContext(ctx, db, toSql); err == nil {
+//			return array.Valueof(mp)
+//		}
+//		return
+//	}
 func QueryMap(db DBHandler, toSql ToSql) (ret map[string]any, err error) {
 	return QueryMapContext(context.Background(), db, toSql)
 }

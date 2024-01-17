@@ -3,6 +3,7 @@ package orm
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 )
 
 type selectSqlBuilder struct {
@@ -25,9 +26,9 @@ func (s *selectJoinSqlBuilder) On(sql ToSql) *selectSqlBuilder {
 	s.selectBuilder.joins = append(s.selectBuilder.joins, sql)
 	return s.selectBuilder
 }
-func (s *selectJoinSqlBuilder) ToSql() (string, []any) {
-	tableStr, pms := s.table.ToSql()
-	onStr, pms2 := s.on.ToSql()
+func (s *selectJoinSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
+	tableStr, pms := s.table.ToSql(config)
+	onStr, pms2 := s.on.ToSql(config)
 	if pms != nil && pms2 != nil {
 		if pms == nil {
 			pms = make([]any, 0)
@@ -75,7 +76,7 @@ func (d *selectSqlBuilder) Join(sql ToSql) *selectJoinSqlBuilder {
 	return &selectJoinSqlBuilder{joinType: "join", table: sql}
 }
 
-func (d *selectSqlBuilder) ToSql() (string, []any) {
+func (d *selectSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
@@ -87,7 +88,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if i > 0 {
 				buf.Write([]byte{byte(',')})
 			}
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -100,7 +101,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if i > 0 {
 				buf.Write([]byte{byte(',')})
 			}
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -111,7 +112,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 	if d.joins != nil {
 		for _, join := range d.joins {
 			buf.WriteString(" ")
-			sqlStr, pms := join.ToSql()
+			sqlStr, pms := join.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -121,7 +122,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 
 	if d.where != nil {
 		buf.WriteString(" where ")
-		sqlStr, pms := d.where.ToSql()
+		sqlStr, pms := d.where.ToSql(config)
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
@@ -133,7 +134,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 			if i > 0 {
 				buf.WriteString(",")
 			}
-			sql, _ := item.ToSql()
+			sql, _ := item.ToSql(config)
 			buf.WriteString(sql)
 		}
 	}
@@ -152,7 +153,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -167,30 +168,50 @@ func Select(fields ...ToSql) *selectSqlBuilder {
 	}
 }
 
+type funcBuilder struct {
+	pms      ToSql
+	funcName string
+}
+
+func (f *funcBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
+	sql, pms := f.pms.ToSql(config)
+	return fmt.Sprintf("%s(%s)", f.funcName, sql), pms
+}
+
 func Sum(field ToSql) *fieldWrapper {
-	sql, _ := field.ToSql()
-	field = Sql(fmt.Sprintf("sum(%s)", sql))
-	return WrapField(field)
+
+	return WrapField(&funcBuilder{
+		pms:      field,
+		funcName: "sum",
+	})
 }
 func Avg(field ToSql) *fieldWrapper {
-	sql, _ := field.ToSql()
-	field = Sql(fmt.Sprintf("avg(%s)", sql))
-	return WrapField(field)
+
+	return WrapField(&funcBuilder{
+		pms:      field,
+		funcName: "avg",
+	})
 }
 func Count(field ToSql) *fieldWrapper {
-	sql, _ := field.ToSql()
-	field = Sql(fmt.Sprintf("count(%s)", sql))
-	return WrapField(field)
+
+	return WrapField(&funcBuilder{
+		pms:      field,
+		funcName: "count",
+	})
 }
 func Max(field ToSql) *fieldWrapper {
-	sql, _ := field.ToSql()
-	field = Sql(fmt.Sprintf("max(%s)", sql))
-	return WrapField(field)
+
+	return WrapField(&funcBuilder{
+		pms:      field,
+		funcName: "max",
+	})
 }
 func Min(field ToSql) *fieldWrapper {
-	sql, _ := field.ToSql()
-	field = Sql(fmt.Sprintf("min(%s)", sql))
-	return WrapField(field)
+
+	return WrapField(&funcBuilder{
+		pms:      field,
+		funcName: "min",
+	})
 }
 
 func Asc(fields ...Field) ToSql {

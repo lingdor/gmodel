@@ -1,7 +1,7 @@
 package common
 
-func OnlySql(toSql ToSql) string {
+func OnlySql(toSql ToSql, config ToSqlConfig) string {
 
-	sql, _ := toSql.ToSql()
+	sql, _ := toSql.ToSql(config)
 	return sql
 }

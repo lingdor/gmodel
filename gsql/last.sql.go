@@ -3,6 +3,7 @@ package gsql
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 	"strconv"
 )
 
@@ -18,7 +19,7 @@ func (l *sqlLimit) Offset(v int) sqlLimit {
 	return *l
 }
 
-func (l sqlLimit) ToSql() (string, []any) {
+func (l sqlLimit) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	var parameters []any
 	buf := bytes.Buffer{}

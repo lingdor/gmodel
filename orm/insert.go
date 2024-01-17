@@ -62,7 +62,7 @@ func Insert(table ToSql) *insertSqlBuilder {
 	}
 }
 
-func (d *insertSqlBuilder) ToSql() (string, any) {
+func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
 
 	if d.table == nil {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))
@@ -74,7 +74,7 @@ func (d *insertSqlBuilder) ToSql() (string, any) {
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
 	buf.WriteString("insert into ")
-	tname, _ := d.table.ToSql()
+	tname, _ := d.table.ToSql(config)
 	buf.WriteString(fmt.Sprintf(tname))
 	if len(d.fields) > 0 {
 		buf.WriteString("(")
@@ -82,7 +82,7 @@ func (d *insertSqlBuilder) ToSql() (string, any) {
 			if i > 0 {
 				buf.WriteString(",")
 			}
-			buf.WriteString(common.OnlySql(field))
+			buf.WriteString(common.OnlySql(field, config))
 		}
 		buf.WriteString(")")
 	}
@@ -105,7 +105,7 @@ func (d *insertSqlBuilder) ToSql() (string, any) {
 		buf.WriteString(")")
 	}
 	if d.selectSql != nil {
-		sql, pms := d.selectSql.ToSql()
+		sql, pms := d.selectSql.ToSql(config)
 		parameters = append(parameters, pms...)
 		buf.WriteString(" ")
 		buf.WriteString(sql)
@@ -113,7 +113,7 @@ func (d *insertSqlBuilder) ToSql() (string, any) {
 	if d.last != nil {
 		buf.WriteString(" ")
 		for _, sql := range d.last {
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}

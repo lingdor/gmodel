@@ -7,7 +7,7 @@ import (
 
 type nameField string
 
-func (n nameField) ToSql() (string, []any) {
+func (n nameField) ToSql(config common.ToSqlConfig) (string, []any) {
 	return string(n), nil
 }
 func (n nameField) Name() string {
@@ -29,9 +29,9 @@ type fieldWrapper struct {
 	alias string
 }
 
-func (f *fieldWrapper) ToSql() (string, []any) {
-	sql, _ := f.field.ToSql()
-	return fmt.Sprintf("%s as \"%s\"", sql, f.alias), nil
+func (f *fieldWrapper) ToSql(config common.ToSqlConfig) (string, []any) {
+	sql, pms := f.field.ToSql(config)
+	return fmt.Sprintf("%s as %s", sql, config.FieldFormat(f.alias)), pms
 }
 func (f *fieldWrapper) As(alias string) *fieldWrapper {
 	f.alias = alias

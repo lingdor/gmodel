@@ -1,33 +1,43 @@
 package orm
 
 import (
-	"bytes"
-	"fmt"
-	"strconv"
+	"github.com/lingdor/gmodel/common"
 )
 
 // todo Is support parameters?
-type sqlLimit string
-
-func (l *sqlLimit) Offset(v int) sqlLimit {
-	*l = sqlLimit(fmt.Sprintf("%s offset %d", *l, v))
-	return *l
+type sqlLimit struct {
+	limit1   int
+	limit2   int
+	isOffset bool
+	isLimit2 bool
 }
 
-func (l sqlLimit) ToSql() (string, []any) {
-	return string(l), nil
+func (l *sqlLimit) Offset(v int) *sqlLimit {
+	l.limit2 = v
+	l.isOffset = true
+	return l
 }
 
-func Limit(offset1 int, offsets ...int) sqlLimit {
-	if len(offsets) > 1 {
-		panic(fmt.Sprintf("offset values max 2, but give %d", len(offsets)+1))
+func (l sqlLimit) ToSql(config common.ToSqlConfig) (string, []any) {
+
+	if l.isOffset {
+		return "limit ? offset ?", []any{l.limit1, l.limit2}
+	} else if l.isLimit2 {
+		return "limit ?,?", []any{l.limit1, l.limit2}
 	}
-	buf := bytes.Buffer{}
-	buf.WriteString(" limit ")
-	buf.WriteString(strconv.Itoa(offset1))
-	if len(offsets) == 1 {
-		buf.Write([]byte{byte(',')})
-		buf.WriteString(strconv.Itoa(offsets[0]))
+	return "limit ?", []any{l.limit1}
+}
+
+func Limit(limit1 int, limit2 ...int) *sqlLimit {
+
+	val := &sqlLimit{
+		limit1:   limit1,
+		isOffset: false,
 	}
-	return sqlLimit(buf.String())
+	if len(limit2) > 0 {
+		val.limit2 = limit2[0]
+		val.isLimit2 = true
+	}
+	return val
+
 }

@@ -3,6 +3,7 @@ package gsql
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 )
 
@@ -49,7 +50,7 @@ func Update(table string) *updateSqlBuilder {
 	}
 }
 
-func (d *updateSqlBuilder) ToSql() (string, any) {
+func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
 
 	if d.table == "" {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))
@@ -79,7 +80,7 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 
 	if d.where != nil {
 		buf.WriteString(" where ")
-		sqlStr, pms := d.where.ToSql()
+		sqlStr, pms := d.where.ToSql(config)
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
@@ -88,7 +89,7 @@ func (d *updateSqlBuilder) ToSql() (string, any) {
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}

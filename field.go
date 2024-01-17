@@ -2,6 +2,7 @@ package gmodel
 
 import (
 	"bytes"
+	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/gmodel/orm"
 )
 
@@ -42,8 +43,8 @@ func (f *FieldInfo) As(name string) ToSql {
 	return orm.WrapField(f).As(name)
 }
 
-func (f *FieldInfo) ToSql() (string, []any) {
-	return f.name, nil
+func (f *FieldInfo) ToSql(config common.ToSqlConfig) (string, []any) {
+	return config.FieldFormat(f.name), nil
 }
 
 func NewField(name string, fieldType string, isNullable, isPK bool) *FieldInfo {
@@ -57,13 +58,13 @@ func NewField(name string, fieldType string, isNullable, isPK bool) *FieldInfo {
 
 type Fields []Field
 
-func (f Fields) ToSql() (string, []any) {
+func (f Fields) ToSql(config common.ToSqlConfig) (string, []any) {
 	bs := bytes.Buffer{}
 	for i, field := range f {
 		if i != 0 {
 			bs.Write([]byte{byte(',')})
 		}
-		sql, _ := field.ToSql()
+		sql, _ := field.ToSql(config)
 		bs.WriteString(sql)
 	}
 	return bs.String(), nil

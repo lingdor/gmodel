@@ -6,9 +6,10 @@ import (
 )
 
 // ExecuteContext some sql like update,insert with context
-func ExecuteContext(ctx context.Context, handler DBHandler, toSql ToSql) (sql.Result, error) {
-	sqlStr, ps := toSqlCall(ctx, toSql)
-	return handler.ExecContext(ctx, sqlStr, ps)
+func ExecuteContext(ctx context.Context, db DBHandler, toSql ToSql) (sql.Result, error) {
+	tosqlConfig := GetToSqlConfig(db)
+	sqlStr, ps := toSqlCall(ctx, toSql, tosqlConfig)
+	return db.ExecContext(ctx, sqlStr, ps)
 }
 
 // Execute some sql like update,insert

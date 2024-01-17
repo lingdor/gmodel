@@ -6,7 +6,7 @@ import (
 
 func TestSum(t *testing.T) {
 
-	sql, _ := Sum("field1").As("f").ToSql()
+	sql := As(Sum("field1"), "f")
 	if sql != "sum(field1) as f" {
 		t.Error("sum assert faild")
 	}

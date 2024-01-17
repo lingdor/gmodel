@@ -8,7 +8,7 @@ type rawSql struct {
 	pms []any
 }
 
-func (r *rawSql) ToSql() (string, []any) {
+func (r *rawSql) ToSql(config ToSqlConfig) (string, []any) {
 	return r.sql, r.pms
 }
 
@@ -21,7 +21,7 @@ func Raw(sql string, pms ...any) ToSql {
 
 type SqlStr string
 
-func (s SqlStr) ToSql() (string, []any) {
+func (s SqlStr) ToSql(config ToSqlConfig) (string, []any) {
 	return string(s), nil
 }
 

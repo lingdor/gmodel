@@ -1,11 +1,7 @@
 package orm
 
-type ToSql interface {
-	ToSql() (string, []any)
-}
+import "github.com/lingdor/gmodel/common"
 
-type Field interface {
-	Name() string
-	As(name string) ToSql
-	ToSql
-}
+type ToSql = common.ToSql
+
+type Field = common.Field

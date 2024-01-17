@@ -3,6 +3,7 @@ package gsql
 import (
 	"bytes"
 	"fmt"
+	"github.com/lingdor/gmodel/common"
 	"strings"
 )
 
@@ -26,9 +27,9 @@ func (s *selectJoinSqlBuilder) On(sql ToSql) *selectSqlBuilder {
 	s.selectBuilder.joins = append(s.selectBuilder.joins, sql)
 	return s.selectBuilder
 }
-func (s *selectJoinSqlBuilder) ToSql() (string, []any) {
-	onStr, pms2 := s.on.ToSql()
-	return fmt.Sprintf("%s %s on %s", s.joinType, s.table, onStr), pms2
+func (s *selectJoinSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
+	onStr, pms2 := s.on.ToSql(config)
+	return fmt.Sprintf("%s %s on %s", s.joinType, common.OnlySql(s, config), onStr), pms2
 }
 
 func (d *selectSqlBuilder) From(sql ...string) *selectSqlBuilder {
@@ -64,7 +65,7 @@ func (d *selectSqlBuilder) Join(table string) *selectJoinSqlBuilder {
 	return &selectJoinSqlBuilder{joinType: "join", table: table}
 }
 
-func (d *selectSqlBuilder) ToSql() (string, []any) {
+func (d *selectSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	buf := bytes.Buffer{}
 	parameters := make([]any, 0, 10)
@@ -86,7 +87,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 	if d.joins != nil {
 		for _, join := range d.joins {
 			buf.WriteString(" ")
-			sqlStr, pms := join.ToSql()
+			sqlStr, pms := join.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -96,7 +97,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 
 	if d.where != nil {
 		buf.WriteString(" where ")
-		sqlStr, pms := d.where.ToSql()
+		sqlStr, pms := d.where.ToSql(config)
 		if pms != nil {
 			parameters = append(parameters, pms...)
 		}
@@ -113,7 +114,7 @@ func (d *selectSqlBuilder) ToSql() (string, []any) {
 	if d.last != nil {
 		buf.Write([]byte{byte(' ')})
 		for _, sql := range d.last {
-			sqlStr, pms := sql.ToSql()
+			sqlStr, pms := sql.ToSql(config)
 			if pms != nil {
 				parameters = append(parameters, pms...)
 			}
@@ -129,14 +130,14 @@ func Select(fields ...string) *selectSqlBuilder {
 }
 
 func Count(field string) string {
-	return fmt.Sprintf("count(\"%s\")", field)
+	return fmt.Sprintf("count(%s)", field)
 }
 func As(exp, alias string) string {
-	return fmt.Sprintf("%s as \"%s\"", exp, alias)
+	return fmt.Sprintf("%s as %s", exp, alias)
 }
 func Sum(field string) string {
-	return fmt.Sprintf("sum(\"%s\")", field)
+	return fmt.Sprintf("sum(%s)", field)
 }
 func Avg(field string) string {
-	return fmt.Sprintf("avg(\"%s\")", field)
+	return fmt.Sprintf("avg(%s)", field)
 }
