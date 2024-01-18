@@ -1,4 +1,2 @@
-github.com/lingdor/magicarray v0.0.6 h1:Sc6OLItu9M5W1dUmVLaaU0qOi6oNgQ71GYcIrENQh/8=
-github.com/lingdor/magicarray v0.0.6/go.mod h1:y+bzlLiWIOymEtvMEgf+BQlcRQQKdQuFmy3AB0MH9vI=
-golang.org/x/exp v0.0.0-20231226003508-02704c960a9b h1:kLiC65FbiHWFAOu+lxwNPujcsl8VYyTYYEZnsOO1WK4=
-golang.org/x/exp v0.0.0-20231226003508-02704c960a9b/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
+github.com/lingdor/magicarray v0.0.8 h1:qv+nUO7LIH+s9CNROduXVTI4vg1vO4w3H62XhqgL6dQ=
+github.com/lingdor/magicarray v0.0.8/go.mod h1:y+bzlLiWIOymEtvMEgf+BQlcRQQKdQuFmy3AB0MH9vI=
