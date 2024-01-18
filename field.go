@@ -69,3 +69,5 @@ func (f Fields) ToSql(config common.ToSqlConfig) (string, []any) {
 	}
 	return bs.String(), nil
 }
+
+var All = common.All

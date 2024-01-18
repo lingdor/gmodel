@@ -3,10 +3,12 @@ package gmodel
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 	"github.com/lingdor/magicarray/zval"
 	"log"
+	"reflect"
 	"strings"
 )
 
@@ -200,19 +202,47 @@ func QueryArrRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (arr ar
 	return
 }
 
-// todo
-// func QueryEntityContext(ctx context.Context, db DBHandler, toSql ToSql, entity any) (arr array.MagicArray, err error) {
-//
-//		if handler, ok := entity.(EntityFieldHandler); ok {
-//
-//		}
-//
-//		var mp map[string]any
-//		if mp, err = QueryMapContext(ctx, db, toSql); err == nil {
-//			return array.Valueof(mp)
-//		}
-//		return
-//	}
+func QueryEntitiesContext[T any](ctx context.Context, db DBHandler, toSql ToSql) (entities []T, err error) {
+	var entity T
+	typ := reflect.TypeOf(entity)
+	if typ.Kind() != reflect.Struct {
+		return nil, errors.New("QueryEntitiesContext T type must is a struct kind")
+	}
+
+	entities = make([]T, 0, 10)
+	tosqlConfig := GetToSqlConfig(db)
+	sqlStr, ps := toSqlCall(ctx, toSql, tosqlConfig)
+	var rows *sql.Rows
+	if rows, err = db.QueryContext(ctx, sqlStr, ps...); err == nil {
+		defer func() {
+			err2 := rows.Close()
+			if err2 != nil && err == nil {
+				err = err2
+			}
+		}()
+		var cols []string
+		if cols, err = rows.Columns(); err == nil {
+			for rows.Next() {
+				var entity T
+				var obj = any(&entity)
+				//= reflect.New(typ).Interface()
+				points := make([]any, len(cols))
+				var lack = true
+				if handler, ok := obj.(EntityFieldHandler); ok {
+					points, lack = handler.GetFieldsHandler(cols)
+				}
+				if lack {
+					points = common.FillHandlers(&entity, cols, points)
+				}
+				if err = rows.Scan(points...); err == nil {
+					entities = append(entities, entity)
+				}
+
+			}
+		}
+	}
+	return
+}
 func QueryMap(db DBHandler, toSql ToSql) (ret map[string]any, err error) {
 	return QueryMapContext(context.Background(), db, toSql)
 }

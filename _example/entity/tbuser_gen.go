@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//gmodel:gen:schema:tb_user:4cf0cbc7e03556b2ab20fc2e0d9b6102
+//gmodel:gen:schema:tb_user:002a7f266b3704a48e51704e7a0ac0b8
 type TbUserSchemaType struct {
 	// Id
 	Id gmodel.Field
@@ -36,16 +36,19 @@ func (s *TbUserSchemaType) As(name string) gmodel.ToSql {
 func (s *TbUserSchemaType) TableName() string {
 	return "tb_user"
 }
+func (s *TbUserSchemaType) All() gmodel.ToSql {
+	return gmodel.AllSchemaFields(s)
+}
 
 //gmodel:gen:end
 //gmodel:gen:entity:tb_user:1c8640609a92a5f7cdc856d6758603ee
 type TbUserEntity struct {
 	// Id
-	Id *string `gmodel:"id"` //
+	Id *string
 	// Name
-	Name *string `gmodel:"name"` //
+	Name *string
 	// Age
-	Age *int `gmodel:"age"` //
+	Age *int
 	// Createtime
 	Createtime *time.Time `gmodel:"createtime"` //
 
@@ -57,14 +60,12 @@ func (entity *TbUserEntity) GetFieldsHandler(fields []string) ([]any, bool) {
 	for i, field := range fields {
 		switch field {
 		case "":
-		case "id":
-			handlers[i] = &entity.Id
-		case "name":
-			handlers[i] = &entity.Name
+
 		case "age":
 			handlers[i] = &entity.Age
 		case "createtime":
 			handlers[i] = &entity.Createtime
+
 		default:
 			lack = true
 		}

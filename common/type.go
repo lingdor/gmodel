@@ -27,3 +27,5 @@ func (m DefaultConfigLoader) FieldFormat(name string) string {
 func (m DefaultConfigLoader) TableFormat(name string) string {
 	return name
 }
+
+var All = Sql("*")
