@@ -39,8 +39,7 @@ func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[st
 				ret = make(map[string]any, len(cols))
 				vals := make([]any, len(cols))
 				for i, k := range cols {
-					vals[i] = newVal(ctx, k)
-					ret[k.Name()] = vals[i]
+					ret[k.Name()], vals[i] = newVal(ctx, k)
 				}
 				err = rows.Scan(vals...)
 			}
@@ -48,72 +47,89 @@ func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[st
 	}
 	return
 }
-func newVal(ctx context.Context, columnType *sql.ColumnType) any {
+func newVal(ctx context.Context, columnType *sql.ColumnType) (any, any) {
+	//todo
+	//func newVal(ctx context.Context, columnType *sql.ColumnType, val *any) any {
 	if opt := ctx.Value(OptQueryNoType); opt != nil {
 		var val any
-		return &val
+		return &val, &val
 	}
 	switch columnType.ScanType() {
 	case scanTypeInt:
 		var v int
-		return &v
+		pp := &v
+		return &v, &pp
 	case scanTypeString:
 		var v string
-		return &v
+		pp := &v
+		return &v, &pp
 	case scanTypeBytes:
 		var v interface{}
-		return &v
+		return &v, &v
 	case scanTypeFloat32:
 		var v float32
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeFloat64:
 		var v float64
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeInt8:
 		var v int8
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeInt16:
 		var v int16
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeInt32:
 		var v int32
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeInt64:
 		var v int64
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeNullFloat:
 		var v sql.NullFloat64
-		return &v
+		return &v, &v
 	case scanTypeNullInt:
 		var v sql.NullInt64
-		return &v
+		return &v, &v
 	case scanTypeNullString:
 		var v sql.NullString
-		return &v
+		return &v, &v
 	case scanTypeNullTime:
 		//var v sql.NullTime
 		var v string
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeUint8:
 		var v uint8
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeUint16:
 		var v uint16
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeUint32:
 		var v uint32
-		return &v
+		var pp = &v
+		return &v, &pp
 	case scanTypeUint64:
 		var v uint64
-		return &v
+		var pp = &v
+		return &v, &pp
 	}
 	switch strings.ToLower(columnType.DatabaseTypeName()) {
 	case "decimal", "numeric", "double":
 		var v float64
-		return &v
+		var pp = &v
+		return &v, &pp
 	case "float":
 		var v float32
-		return &v
+		var pp = &v
+		return &v, &pp
 	}
 	//switch strings.ToLower(columnType.DatabaseTypeName()) {
 	//case "decimal", "numeric", "double", "float":
@@ -123,7 +139,7 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) any {
 
 	{
 		var v any
-		return &v
+		return &v, &v
 	}
 }
 
@@ -145,8 +161,7 @@ func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []
 				row := make(map[string]any, len(cols))
 				vals := make([]any, len(cols))
 				for i, k := range cols {
-					vals[i] = newVal(ctx, k)
-					row[k.Name()] = vals[i]
+					row[k.Name()], vals[i] = newVal(ctx, k)
 				}
 				if err = rows.Scan(vals...); err == nil {
 					ret = append(ret, row)
@@ -174,8 +189,8 @@ func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.
 					val = zval.NewZValNil()
 					return
 				}
-				var v = newVal(ctx, cols[0])
-				if err = rows.Scan(v); err == nil {
+				var v, p = newVal(ctx, cols[0])
+				if err = rows.Scan(p); err == nil {
 					val = zval.NewZVal(v)
 					return
 				}
