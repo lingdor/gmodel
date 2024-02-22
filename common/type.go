@@ -14,6 +14,10 @@ type Field interface {
 	ToSql
 }
 
+type Table interface {
+	TableName() string
+}
+
 type EntityFieldHandler interface {
 	GetFieldsHandler(fields []string) ([]any, bool)
 }

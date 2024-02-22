@@ -15,11 +15,12 @@ type insertSqlBuilder struct {
 	last      []ToSql
 }
 
-func (d *insertSqlBuilder) Values(vals ...any) {
+func (d *insertSqlBuilder) Values(vals ...any) *insertSqlBuilder {
 	d.values = append(d.values, vals)
+	return d
 }
 
-func (d *insertSqlBuilder) Set(field Field, val any) {
+func (d *insertSqlBuilder) Set(field Field, val any) *insertSqlBuilder {
 
 	if len(d.values) < 2 {
 		d.fields = append(d.fields, field)
@@ -29,22 +30,32 @@ func (d *insertSqlBuilder) Set(field Field, val any) {
 	}
 	last := len(d.values) - 1
 	d.values[last] = append(d.values[last], val)
+	return d
 }
 
-func (d *insertSqlBuilder) SetArr(arr array.MagicArray) {
+func (d *insertSqlBuilder) SetArr(arr array.MagicArray) *insertSqlBuilder {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
-		d.Set(NewNameField(k.String()), v.Interface())
+		fieldtag, _ := array.ZValTagGet(v, common.TagName)
+		fieldname := ToDbName(k.String(), fieldtag)
+		d.Set(NewNameField(fieldname), v.Interface())
 	}
+	return d
 }
-func (d *insertSqlBuilder) SetMap(vals map[Field]any) {
+
+func (d *insertSqlBuilder) SetEntity(entity any) *insertSqlBuilder {
+	return d.SetArr(array.ValueofStruct(entity))
+}
+func (d *insertSqlBuilder) SetMap(vals map[Field]any) *insertSqlBuilder {
 	for k, v := range vals {
 		d.Set(k, v)
 	}
+	return d
 }
 
-func (d *insertSqlBuilder) Last(sql ToSql) {
+func (d *insertSqlBuilder) Last(sql ToSql) *insertSqlBuilder {
 	d.last = append(d.last, sql)
+	return d
 }
 func (d *insertSqlBuilder) Select(fields ...ToSql) (ret *selectSqlBuilder) {
 	ret = &selectSqlBuilder{
@@ -55,6 +66,7 @@ func (d *insertSqlBuilder) Select(fields ...ToSql) (ret *selectSqlBuilder) {
 }
 
 func Insert(table ToSql) *insertSqlBuilder {
+
 	return &insertSqlBuilder{
 		table:  table,
 		values: make([][]any, 0),
@@ -62,7 +74,7 @@ func Insert(table ToSql) *insertSqlBuilder {
 	}
 }
 
-func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
+func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	if d.table == nil {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))

@@ -1,5 +1,5 @@
 package gmodel
 
-type Table interface {
-	TableName() string
-}
+import "github.com/lingdor/gmodel/common"
+
+type Table = common.Table

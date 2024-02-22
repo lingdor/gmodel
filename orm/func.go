@@ -8,7 +8,7 @@ import (
 type nameField string
 
 func (n nameField) ToSql(config common.ToSqlConfig) (string, []any) {
-	return string(n), nil
+	return config.FieldFormat(string(n)), nil
 }
 func (n nameField) Name() string {
 	return string(n)

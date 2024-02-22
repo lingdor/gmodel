@@ -113,16 +113,17 @@ func Between(field ToSql, val1, val2 any) *sqlWhereBuilder {
 	}
 }
 
-type valuesSqlBuilder []any
+type valuesSqlBuilder[T any] []T
 
-func (v valuesSqlBuilder) ToSql(config common.ToSqlConfig) (sql string, pms []any) {
+func (v valuesSqlBuilder[T]) ToSql(config common.ToSqlConfig) (sql string, pms []any) {
 	builder := &bytes.Buffer{}
 	pms = make([]any, 0, len(v))
 	for i, item := range v {
 		if i > 0 {
 			builder.WriteString(",")
 		}
-		if sql, ok := item.(ToSql); !ok {
+		vo := any(item)
+		if sql, ok := vo.(ToSql); !ok {
 			builder.WriteString("?")
 			pms = append(pms, item)
 		} else {
@@ -137,18 +138,19 @@ func (v valuesSqlBuilder) ToSql(config common.ToSqlConfig) (sql string, pms []an
 	return
 }
 
-func In(field ToSql, vals ...any) *sqlWhereBuilder {
+func In[T any](field ToSql, vals ...T) *sqlWhereBuilder {
+
 	return &sqlWhereBuilder{
 		left:     field,
 		statment: "in",
-		right:    valuesSqlBuilder(vals),
+		right:    valuesSqlBuilder[T](vals),
 	}
 }
-func NotIn(field ToSql, vals ...any) *sqlWhereBuilder {
+func NotIn[T any](field ToSql, vals ...T) *sqlWhereBuilder {
 	return &sqlWhereBuilder{
 		left:     field,
 		statment: "not in",
-		right:    valuesSqlBuilder(vals),
+		right:    valuesSqlBuilder[T](vals),
 	}
 }
 

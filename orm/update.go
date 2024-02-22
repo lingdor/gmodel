@@ -41,28 +41,33 @@ func (f FieldMap) ToSql(config common.ToSqlConfig) (string, []any) {
 	panic("Field Map is invoked")
 }
 
-func (d *updateSqlBuilder) Where(sql ToSql) {
+func (d *updateSqlBuilder) Where(sql ToSql) *updateSqlBuilder {
 	d.where = sql
+	return d
 }
 
-func (d *updateSqlBuilder) Set(field Field, val any) {
+func (d *updateSqlBuilder) Set(field Field, val any) *updateSqlBuilder {
 	d.set[field] = val
+	return d
 }
 
-func (d *updateSqlBuilder) SetArr(arr array.MagicArray) {
+func (d *updateSqlBuilder) SetArr(arr array.MagicArray) *updateSqlBuilder {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
 		d.Set(NewNameField(k.String()), v.Interface())
 	}
+	return d
 }
-func (d *updateSqlBuilder) SetMap(vals map[Field]any) {
+func (d *updateSqlBuilder) SetMap(vals map[Field]any) *updateSqlBuilder {
 	for k, v := range vals {
 		d.Set(k, v)
 	}
+	return d
 }
 
-func (d *updateSqlBuilder) Last(sql ToSql) {
+func (d *updateSqlBuilder) Last(sql ToSql) *updateSqlBuilder {
 	d.last = append(d.last, sql)
+	return d
 }
 
 func Update(table ToSql) *updateSqlBuilder {
@@ -73,7 +78,7 @@ func Update(table ToSql) *updateSqlBuilder {
 	}
 }
 
-func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
+func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 
 	if d.table == nil {
 		panic(fmt.Errorf("select sql generate faild, no found parts of:'from'"))

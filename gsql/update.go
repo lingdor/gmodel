@@ -29,7 +29,9 @@ func (d *updateSqlBuilder) Set(field string, val any) {
 func (d *updateSqlBuilder) SetArr(arr array.MagicArray) {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
-		d.set[k.String()] = v.Interface()
+		fieldtag, _ := array.ZValTagGet(v, common.TagName)
+		fieldname := ToDbName(k.String(), fieldtag)
+		d.set[fieldname] = v.Interface()
 	}
 }
 func (d *updateSqlBuilder) SetMap(vals map[string]any) {
