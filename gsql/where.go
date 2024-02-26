@@ -127,6 +127,7 @@ type valuesSqlBuilder []any
 
 func (v valuesSqlBuilder) ToSql(config common.ToSqlConfig) (sql string, pms []any) {
 	builder := &bytes.Buffer{}
+	builder.Write([]byte("("))
 	pms = make([]any, 0, len(v))
 	for i, item := range v {
 		if i > 0 {
@@ -143,6 +144,7 @@ func (v valuesSqlBuilder) ToSql(config common.ToSqlConfig) (sql string, pms []an
 			builder.WriteString(sqlStr)
 		}
 	}
+	builder.Write([]byte(")"))
 	sql = builder.String()
 	return
 }

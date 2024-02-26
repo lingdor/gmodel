@@ -12,12 +12,20 @@ type sqlWhereBuilder struct {
 	right    ToSql
 }
 
-func (s *sqlWhereBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
+func (s *sqlWhereBuilder) ToSql(config common.ToSqlConfig) (sqlStr string, pms []any) {
 	if s.left == nil {
 		return s.right.ToSql(config)
 	}
-	sqlStr, pms := s.right.ToSql(config)
-	return fmt.Sprintf("%s %s %s", common.OnlySql(s.left, config), s.statment, sqlStr), pms
+	rightStr, rightPms := s.right.ToSql(config)
+	leftStr, leftPms := s.left.ToSql(config)
+	if leftPms != nil {
+		pms = append(pms, leftPms...)
+	}
+	if rightPms != nil {
+		pms = append(pms, rightPms...)
+	}
+	sqlStr = fmt.Sprintf("%s %s %s", leftStr, s.statment, rightStr)
+	return
 }
 
 func (s *sqlWhereBuilder) Or(sql ToSql) *sqlWhereBuilder {
@@ -118,6 +126,7 @@ type valuesSqlBuilder[T any] []T
 func (v valuesSqlBuilder[T]) ToSql(config common.ToSqlConfig) (sql string, pms []any) {
 	builder := &bytes.Buffer{}
 	pms = make([]any, 0, len(v))
+	builder.Write([]byte("("))
 	for i, item := range v {
 		if i > 0 {
 			builder.WriteString(",")
@@ -134,6 +143,7 @@ func (v valuesSqlBuilder[T]) ToSql(config common.ToSqlConfig) (sql string, pms [
 			builder.WriteString(sqlStr)
 		}
 	}
+	builder.Write([]byte(")"))
 	sql = builder.String()
 	return
 }
