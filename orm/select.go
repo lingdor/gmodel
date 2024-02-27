@@ -199,6 +199,9 @@ func Count(field ToSql) *fieldWrapper {
 		funcName: "count",
 	})
 }
+func CountAll() ToSql {
+	return Sql("count(*)")
+}
 func Max(field ToSql) *fieldWrapper {
 
 	return WrapField(&funcBuilder{

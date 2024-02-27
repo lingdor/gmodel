@@ -100,9 +100,18 @@ func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 		if !first {
 			buf.Write([]byte{byte(',')})
 		} else {
-			first = true
+			first = false
 		}
-		sqlStr := fmt.Sprintf("\"%s\"=?", field.Name())
+		if tosql, ok := fieldv.(ToSql); ok {
+			val, valParam := tosql.ToSql(config)
+			sqlStr := fmt.Sprintf("%s=%s", config.FieldFormat(field.Name()), val)
+			if valParam != nil {
+				parameters = append(parameters, valParam)
+			}
+			buf.WriteString(sqlStr)
+			continue
+		}
+		sqlStr := fmt.Sprintf("%s=?", config.FieldFormat(field.Name()))
 		parameters = append(parameters, fieldv)
 		buf.WriteString(sqlStr)
 	}

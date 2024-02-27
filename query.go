@@ -38,98 +38,111 @@ func QueryMapContext(ctx context.Context, db DBHandler, toSql ToSql) (ret map[st
 			if rows.Next() {
 				ret = make(map[string]any, len(cols))
 				vals := make([]any, len(cols))
+				var pms = make([]ScanParam, len(cols))
 				for i, k := range cols {
-					ret[k.Name()], vals[i] = newVal(ctx, k)
+					pms[i] = newVal(ctx, k)
+					vals[i] = pms[i].GetPointer()
 				}
-				err = rows.Scan(vals...)
+				if err = rows.Scan(vals...); err == nil {
+					for i, col := range cols {
+						ret[col.Name()] = pms[i].GetVal()
+					}
+					//ret = append(ret, row)
+				}
+
+				//for i, k := range cols {
+				//ret[k.Name()], vals[i] = newVal(ctx, k)
+				//}
+				//err = rows.Scan(vals...)
 			}
 		}
 	}
 	return
 }
-func newVal(ctx context.Context, columnType *sql.ColumnType) (any, any) {
+
+func newVal(ctx context.Context, columnType *sql.ColumnType) ScanParam {
 	//todo
 	//func newVal(ctx context.Context, columnType *sql.ColumnType, val *any) any {
 	if opt := ctx.Value(OptQueryNoType); opt != nil {
 		var val any
-		return &val, &val
+		return &DefaultScanParam[any]{v: &val}
 	}
 	switch columnType.ScanType() {
 	case scanTypeInt:
 		var v int
 		pp := &v
-		return &v, &pp
+		return &DefaultScanParam[*int]{v: &pp}
 	case scanTypeString:
 		var v string
 		pp := &v
-		return &v, &pp
+		return &DefaultScanParam[*string]{v: &pp}
 	case scanTypeBytes:
 		var v interface{}
-		return &v, &v
+		return &DefaultScanParam[any]{v: &v}
 	case scanTypeFloat32:
 		var v float32
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*float32]{v: &pp}
 	case scanTypeFloat64:
 		var v float64
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*float64]{v: &pp}
 	case scanTypeInt8:
 		var v int8
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*int8]{v: &pp}
 	case scanTypeInt16:
 		var v int16
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*int16]{v: &pp}
 	case scanTypeInt32:
 		var v int32
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*int32]{v: &pp}
 	case scanTypeInt64:
 		var v int64
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*int64]{v: &pp}
 	case scanTypeNullFloat:
 		var v sql.NullFloat64
-		return &v, &v
+		return &DefaultScanParam[sql.NullFloat64]{v: &v}
 	case scanTypeNullInt:
 		var v sql.NullInt64
-		return &v, &v
+		return &DefaultScanParam[sql.NullInt64]{v: &v}
 	case scanTypeNullString:
 		var v sql.NullString
-		return &v, &v
+		return &DefaultScanParam[sql.NullString]{v: &v}
 	case scanTypeNullTime:
 		//var v sql.NullTime
 		var v string
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*string]{v: &pp}
 	case scanTypeUint8:
 		var v uint8
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*uint8]{v: &pp}
 	case scanTypeUint16:
 		var v uint16
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*uint16]{v: &pp}
 	case scanTypeUint32:
 		var v uint32
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*uint32]{v: &pp}
 	case scanTypeUint64:
 		var v uint64
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*uint64]{v: &pp}
 	}
 	switch strings.ToLower(columnType.DatabaseTypeName()) {
 	case "decimal", "numeric", "double":
 		var v float64
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*float64]{v: &pp}
 	case "float":
 		var v float32
 		var pp = &v
-		return &v, &pp
+		return &DefaultScanParam[*float32]{v: &pp}
 	}
 	//switch strings.ToLower(columnType.DatabaseTypeName()) {
 	//case "decimal", "numeric", "double", "float":
@@ -139,7 +152,7 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) (any, any) {
 
 	{
 		var v any
-		return &v, &v
+		return &DefaultScanParam[any]{v: &v}
 	}
 }
 
@@ -160,10 +173,16 @@ func QueryMapRowsContext(ctx context.Context, db DBHandler, toSql ToSql) (ret []
 			for rows.Next() {
 				row := make(map[string]any, len(cols))
 				vals := make([]any, len(cols))
+				var pms = make([]ScanParam, len(cols))
 				for i, k := range cols {
-					row[k.Name()], vals[i] = newVal(ctx, k)
+					pms[i] = newVal(ctx, k)
+					vals[i] = pms[i].GetPointer()
+					//row[k.Name()],
 				}
 				if err = rows.Scan(vals...); err == nil {
+					for i, col := range cols {
+						row[col.Name()] = pms[i].GetVal()
+					}
 					ret = append(ret, row)
 				}
 			}
@@ -189,9 +208,9 @@ func QueryValContext(ctx context.Context, db DBHandler, toSql ToSql) (val array.
 					val = zval.NewZValNil()
 					return
 				}
-				var v, p = newVal(ctx, cols[0])
-				if err = rows.Scan(p); err == nil {
-					val = zval.NewZVal(v)
+				var scanval = newVal(ctx, cols[0])
+				if err = rows.Scan(scanval.GetPointer()); err == nil {
+					val = zval.NewZVal(scanval.GetVal())
 					return
 				}
 			} else {

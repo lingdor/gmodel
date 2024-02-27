@@ -75,7 +75,7 @@ func (d *updateSqlBuilder) ToSql(config common.ToSqlConfig) (string, any) {
 		} else {
 			first = false
 		}
-		buf.WriteString(fmt.Sprintf("\"%s\"=?", k))
+		buf.WriteString(fmt.Sprintf("%s=?", k))
 		parameters = append(parameters, v)
 
 	}
