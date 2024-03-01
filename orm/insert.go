@@ -27,9 +27,10 @@ func (d *insertSqlBuilder) Set(field Field, val any) *insertSqlBuilder {
 	}
 	if len(d.values) == 0 {
 		d.values = append(d.values, []any{val})
+	} else {
+		last := len(d.values) - 1
+		d.values[last] = append(d.values[last], val)
 	}
-	last := len(d.values) - 1
-	d.values[last] = append(d.values[last], val)
 	return d
 }
 
@@ -98,7 +99,7 @@ func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 		}
 		buf.WriteString(")")
 	}
-
+	buf.WriteString("values")
 	for i, values := range d.values {
 		if len(values) < 1 {
 			panic(fmt.Errorf("empty values in the insert sql"))
@@ -106,15 +107,21 @@ func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		buf.WriteString("(")
-		for j, values := range d.values {
-			if j > 0 {
-				buf.WriteString(",")
+		for _, values := range d.values {
+			buf.WriteString("(")
+			for j, val := range values {
+				if j > 0 {
+					buf.WriteString(",")
+				}
+
+				buf.WriteString("?")
+				//buf.WriteString("'")
+				//buf.WriteString(strings.ReplaceAll(fmt.Sprint(val),"'","''"))
+				//buf.WriteString("'")
+				parameters = append(parameters, val)
 			}
-			buf.WriteString("?")
-			parameters = append(parameters, values)
+			buf.WriteString(")")
 		}
-		buf.WriteString(")")
 	}
 	if d.selectSql != nil {
 		sql, pms := d.selectSql.ToSql(config)
