@@ -94,6 +94,13 @@ func NotEq(field ToSql, val any) *sqlWhereBuilder {
 		right:    anyToSql(val),
 	}
 }
+func Like(field ToSql, val string) *sqlWhereBuilder {
+	return &sqlWhereBuilder{
+		left:     field,
+		statment: "like",
+		right:    anyToSql(val),
+	}
+}
 func IsNull(field ToSql) *sqlWhereBuilder {
 	return &sqlWhereBuilder{
 		left:     field,
@@ -108,6 +115,7 @@ func IsNotNull(field ToSql) *sqlWhereBuilder {
 		right:    Sql("is not null"),
 	}
 }
+
 func Between(field ToSql, val1, val2 any) *sqlWhereBuilder {
 
 	return &sqlWhereBuilder{
