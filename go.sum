@@ -1,0 +1,4 @@
+github.com/go-logr/logr v1.4.1 h1:pKouT5E8xu9zeFC39JXRDukb6JFQPXM5p5I91188VAQ=
+github.com/go-logr/logr v1.4.1/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
+github.com/lingdor/slog-context v0.0.0-20240308031303-f799b3efe71f h1:ZCApFhU7z25WiuA8LZxCr74/lwOMtCPEzm3+kgPtLbg=
+github.com/lingdor/slog-context v0.0.0-20240308031303-f799b3efe71f/go.mod h1:iacfiJRhR++jcdWYVxYDSJfRscvzSROGKSexRihBS5E=
