@@ -217,21 +217,35 @@ func Min(field ToSql) *fieldWrapper {
 	})
 }
 
+type sortSql struct {
+	sortType string
+	fields   []Field
+}
+
 func Asc(fields ...Field) ToSql {
-	return sortOutput("asc", fields...)
+	return &sortSql{
+		sortType: "asc",
+		fields:   fields,
+	}
+	//sortOutput("asc", fields...)
 }
 func Desc(fields ...Field) ToSql {
-	return sortOutput("desc", fields...)
+	return &sortSql{
+		sortType: "desc",
+		fields:   fields,
+	}
 }
-func sortOutput(sortType string, fields ...Field) ToSql {
+func (s *sortSql) ToSql(config common.ToSqlConfig) (string, []any) {
+
 	buf := bytes.Buffer{}
-	for i, field := range fields {
+	for i, field := range s.fields {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		buf.WriteString(fmt.Sprintf("\"%s\"", field.Name()))
+		fieldSql, _ := field.ToSql(config)
+		buf.WriteString(fieldSql)
 	}
 	buf.WriteString(" ")
-	buf.WriteString(sortType)
-	return Sql(buf.String())
+	buf.WriteString(s.sortType)
+	return buf.String(), nil
 }
