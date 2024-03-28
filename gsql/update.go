@@ -3,6 +3,7 @@ package gsql
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 )
@@ -29,9 +30,11 @@ func (d *updateSqlBuilder) Set(field string, val any) {
 func (d *updateSqlBuilder) SetArr(arr array.MagicArray) {
 	iter := arr.Iter()
 	for k, v := iter.NextKV(); k != nil; k, v = iter.NextKV() {
-		fieldtag, _ := array.ZValTagGet(v, common.TagName)
-		fieldname := ToDbName(k.String(), fieldtag)
-		d.set[fieldname] = v.Interface()
+		fieldName := k.String()
+		if fieldtag, ok := array.ZValTagGet(v, common.TagName); ok {
+			fieldName = fieldtag
+		}
+		d.set[fieldName] = v.Interface()
 	}
 }
 func (d *updateSqlBuilder) SetMap(vals map[string]any) {
