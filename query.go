@@ -17,7 +17,7 @@ func toSqlCall(ctx context.Context, toSql ToSql, config common.ToSqlConfig) (sql
 	sqlStr, pms = toSql.ToSql(config)
 	if ctx.Value(OptLogSql) != nil {
 		logger := slog2.FromContextOrDefault(ctx)
-		logger.Info("sql:%s, parameters:%+v\n", sqlStr, pms)
+		logger.Info("sql content", "sql", sqlStr, "parameters", pms)
 	}
 	return
 }
