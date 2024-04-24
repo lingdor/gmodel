@@ -117,7 +117,7 @@ func Between(field string, val1, val2 any) *sqlWhereBuilder {
 		statment: "between",
 		right: &sqlWhereBuilder{
 			left:     anyToSql(val1),
-			statment: "between",
+			statment: "and",
 			right:    anyToSql(val2),
 		},
 	}

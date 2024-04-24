@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/lingdor/gmodel/common"
+	"reflect"
 )
 
 type sqlWhereBuilder struct {
@@ -123,7 +124,7 @@ func Between(field ToSql, val1, val2 any) *sqlWhereBuilder {
 		statment: "between",
 		right: &sqlWhereBuilder{
 			left:     anyToSql(val1),
-			statment: "between",
+			statment: "and",
 			right:    anyToSql(val2),
 		},
 	}
@@ -158,18 +159,45 @@ func (v valuesSqlBuilder[T]) ToSql(config common.ToSqlConfig) (sql string, pms [
 
 func In[T any](field ToSql, vals ...T) *sqlWhereBuilder {
 
-	return &sqlWhereBuilder{
+	ret := &sqlWhereBuilder{
 		left:     field,
 		statment: "in",
 		right:    valuesSqlBuilder[T](vals),
 	}
+	if len(vals) == 1 {
+		rval := reflect.ValueOf(vals[0])
+		if rval.Kind() == reflect.Slice {
+			var objVals = make([]any, rval.Len())
+			for i := 0; i < rval.Len(); i++ {
+				objVals[i] = rval.Index(i).Interface()
+			}
+			ret.right = valuesSqlBuilder[any](objVals)
+		}
+	}
+	return ret
 }
 func NotIn[T any](field ToSql, vals ...T) *sqlWhereBuilder {
-	return &sqlWhereBuilder{
+
+	ret := &sqlWhereBuilder{
 		left:     field,
 		statment: "not in",
 		right:    valuesSqlBuilder[T](vals),
 	}
+	var objVal any = vals
+	if len(vals) == 1 {
+		switch objVal.(type) {
+		case []any:
+			rval := reflect.ValueOf(vals[0])
+			if rval.Kind() == reflect.Slice {
+				var objVals = make([]any, rval.Len())
+				for i := 0; i < rval.Len(); i++ {
+					objVals[i] = rval.Index(i).Interface()
+				}
+				ret.right = valuesSqlBuilder[any](objVals)
+			}
+		}
+	}
+	return ret
 }
 
 type sqlBuilderGroup struct {

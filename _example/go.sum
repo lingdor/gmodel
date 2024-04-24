@@ -2,4 +2,5 @@ github.com/go-sql-driver/mysql v1.7.1 h1:lUIinVbN1DY0xBg0eMOzmmtGoHwWBbvnWubQUrt
 github.com/go-sql-driver/mysql v1.7.1/go.mod h1:OXbVy3sEdcQ2Doequ6Z5BW6fXNQTmx+9S1MCJN5yJMI=
 github.com/lingdor/magicarray v0.0.8 h1:qv+nUO7LIH+s9CNROduXVTI4vg1vO4w3H62XhqgL6dQ=
 github.com/lingdor/magicarray v0.0.8/go.mod h1:y+bzlLiWIOymEtvMEgf+BQlcRQQKdQuFmy3AB0MH9vI=
+github.com/lingdor/magicarray v0.0.10/go.mod h1:K02x3vdXllX7ITssuBt4OpSOFvMPE5J1uy+6Kw9VfDE=
 golang.org/x/exp v0.0.0-20231226003508-02704c960a9b/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
