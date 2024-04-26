@@ -142,12 +142,15 @@ func (d *selectSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 		buf.WriteString(" group by ")
 
 		for i, field := range d.groupBy {
+
 			if i > 0 {
-				buf.WriteString(",")
+				buf.Write([]byte{byte(',')})
 			}
-			buf.WriteString("\"")
-			buf.WriteString(field.Name())
-			buf.WriteString("\"")
+			sqlStr, pms := field.ToSql(config)
+			if pms != nil {
+				parameters = append(parameters, pms...)
+			}
+			buf.WriteString(sqlStr)
 		}
 	}
 	if d.last != nil {
