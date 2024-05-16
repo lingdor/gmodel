@@ -23,7 +23,8 @@ type selectJoinSqlBuilder struct {
 }
 
 func (s *selectJoinSqlBuilder) On(sql ToSql) *selectSqlBuilder {
-	s.selectBuilder.joins = append(s.selectBuilder.joins, sql)
+	s.on = sql
+	s.selectBuilder.joins = append(s.selectBuilder.joins, s)
 	return s.selectBuilder
 }
 func (s *selectJoinSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
@@ -64,16 +65,16 @@ func (d *selectSqlBuilder) Last(sql ...ToSql) *selectSqlBuilder {
 	return d
 }
 func (d *selectSqlBuilder) LeftJoin(sql ToSql) *selectJoinSqlBuilder {
-	return &selectJoinSqlBuilder{joinType: "left join", table: sql}
+	return &selectJoinSqlBuilder{joinType: "left join", table: sql, selectBuilder: d}
 }
 func (d *selectSqlBuilder) InnerJoin(sql ToSql) *selectJoinSqlBuilder {
-	return &selectJoinSqlBuilder{joinType: "right join", table: sql}
+	return &selectJoinSqlBuilder{joinType: "inner join", table: sql, selectBuilder: d}
 }
 func (d *selectSqlBuilder) RightJoin(sql ToSql) *selectJoinSqlBuilder {
-	return &selectJoinSqlBuilder{joinType: "inner join", table: sql}
+	return &selectJoinSqlBuilder{joinType: "right join", table: sql, selectBuilder: d}
 }
 func (d *selectSqlBuilder) Join(sql ToSql) *selectJoinSqlBuilder {
-	return &selectJoinSqlBuilder{joinType: "join", table: sql}
+	return &selectJoinSqlBuilder{joinType: "join", table: sql, selectBuilder: d}
 }
 
 func (d *selectSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
