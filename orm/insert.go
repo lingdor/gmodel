@@ -19,6 +19,10 @@ func (d *insertSqlBuilder) Values(vals ...any) *insertSqlBuilder {
 	d.values = append(d.values, vals)
 	return d
 }
+func (d *insertSqlBuilder) Fields(fields ...Field) *insertSqlBuilder {
+	d.fields = append(d.fields, fields...)
+	return d
+}
 
 func (d *insertSqlBuilder) Set(field Field, val any) *insertSqlBuilder {
 
@@ -107,21 +111,19 @@ func (d *insertSqlBuilder) ToSql(config common.ToSqlConfig) (string, []any) {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		for _, values := range d.values {
-			buf.WriteString("(")
-			for j, val := range values {
-				if j > 0 {
-					buf.WriteString(",")
-				}
-
-				buf.WriteString("?")
-				//buf.WriteString("'")
-				//buf.WriteString(strings.ReplaceAll(fmt.Sprint(val),"'","''"))
-				//buf.WriteString("'")
-				parameters = append(parameters, val)
+		buf.WriteString("(")
+		for j, val := range values {
+			if j > 0 {
+				buf.WriteString(",")
 			}
-			buf.WriteString(")")
+
+			buf.WriteString("?")
+			//buf.WriteString("'")
+			//buf.WriteString(strings.ReplaceAll(fmt.Sprint(val),"'","''"))
+			//buf.WriteString("'")
+			parameters = append(parameters, val)
 		}
+		buf.WriteString(")")
 	}
 	if d.selectSql != nil {
 		sql, pms := d.selectSql.ToSql(config)
