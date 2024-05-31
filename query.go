@@ -145,7 +145,12 @@ func newVal(ctx context.Context, columnType *sql.ColumnType) ScanParam {
 		var v float32
 		var pp = &v
 		return &DefaultScanParam[*float32]{v: &pp}
+	case "varchar", "nvarchar", "char", "string", "text", "mediumtext", "tinytext", "longtext", "character", "character varying", "bpchar":
+		var v string
+		pp := &v
+		return &DefaultScanParam[*string]{v: &pp}
 	}
+
 	//switch strings.ToLower(columnType.DatabaseTypeName()) {
 	//case "decimal", "numeric", "double", "float":
 	//	var v string
