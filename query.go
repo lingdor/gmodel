@@ -4,20 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/lingdor/gmodel/mylog"
 	"reflect"
 	"strings"
 
 	"github.com/lingdor/gmodel/common"
 	"github.com/lingdor/magicarray/array"
 	"github.com/lingdor/magicarray/zval"
-	"github.com/lingdor/slog-context/slog2"
 )
 
 func toSqlCall(ctx context.Context, toSql ToSql, config common.ToSqlConfig) (sqlStr string, pms []any) {
 	sqlStr, pms = toSql.ToSql(config)
 	if ctx.Value(OptLogSql) != nil {
-		logger := slog2.FromContextOrDefault(ctx)
-		logger.Info("sql content", "sql", sqlStr, "parameters", pms)
+		logger := mylog.GetLogger()
+		logger.Println("sql content", "sql:", sqlStr, ",parameters:", pms)
 	}
 	return
 }
