@@ -68,21 +68,21 @@ func Gt(field string, val any) *sqlWhereBuilder {
 		right:    anyToSql(val),
 	}
 }
-func Le(field string, val any) *sqlWhereBuilder {
+func Lt(field string, val any) *sqlWhereBuilder {
 	return &sqlWhereBuilder{
 		left:     field,
 		statment: "<",
 		right:    anyToSql(val),
 	}
 }
-func LeEq(field string, val any) *sqlWhereBuilder {
+func Le(field string, val any) *sqlWhereBuilder {
 	return &sqlWhereBuilder{
 		left:     field,
 		statment: "<=",
 		right:    anyToSql(val),
 	}
 }
-func GtEq(field string, val any) *sqlWhereBuilder {
+func Ge(field string, val any) *sqlWhereBuilder {
 	return &sqlWhereBuilder{
 		left:     field,
 		statment: ">=",
