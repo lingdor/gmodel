@@ -183,18 +183,15 @@ func NotIn[T any](field ToSql, vals ...T) *sqlWhereBuilder {
 		statment: "not in",
 		right:    valuesSqlBuilder[T](vals),
 	}
-	var objVal any = vals
 	if len(vals) == 1 {
-		switch objVal.(type) {
-		case []any:
-			rval := reflect.ValueOf(vals[0])
-			if rval.Kind() == reflect.Slice {
-				var objVals = make([]any, rval.Len())
-				for i := 0; i < rval.Len(); i++ {
-					objVals[i] = rval.Index(i).Interface()
-				}
-				ret.right = valuesSqlBuilder[any](objVals)
+
+		rval := reflect.ValueOf(vals[0])
+		if rval.Kind() == reflect.Slice {
+			var objVals = make([]any, rval.Len())
+			for i := 0; i < rval.Len(); i++ {
+				objVals[i] = rval.Index(i).Interface()
 			}
+			ret.right = valuesSqlBuilder[any](objVals)
 		}
 	}
 	return ret
