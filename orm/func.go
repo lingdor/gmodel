@@ -31,7 +31,10 @@ type fieldWrapper struct {
 
 func (f *fieldWrapper) ToSql(config common.ToSqlConfig) (string, []any) {
 	sql, pms := f.field.ToSql(config)
-	return fmt.Sprintf("%s as %s", sql, config.FieldFormat(f.alias)), pms
+	if f.alias != "" {
+		return fmt.Sprintf("%s as %s", sql, config.FieldFormat(f.alias)), pms
+	}
+	return sql, pms
 }
 func (f *fieldWrapper) As(alias string) *fieldWrapper {
 	f.alias = alias
